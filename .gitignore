@@ -25,5 +25,6 @@ Thumbs.db
 /apps/web/public/engine/
 /target-e2e
 /e2e/**/test-results
+/e2e/results/
 /e2e/**/playwright-report
 *.partial

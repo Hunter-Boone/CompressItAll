@@ -73,6 +73,9 @@ function Shell({ licenses }: { licenses: LicensesData | (() => Promise<LicensesD
     if (items.length) dispatch({ type: "add_items", items });
   }, [host, dispatch]);
 
+  // Desktop: OS drops land on the window, not the DOM (DESIGN.md 4.3).
+  useEffect(() => host.onExternalInputs?.(addSources), [host, addSources]);
+
   const needsFfmpeg = useCallback((item: InputItem) => host.kind === "desktop" && !caps?.ffmpeg && (item.kind === "video" || (item.kind === "audio" && ["m4a", "aac", "alac", "wma"].includes(item.detail.format))), [host.kind, caps]);
 
   const request = useCallback((items: InputItem[], dest: Destination): PlanRequest => ({

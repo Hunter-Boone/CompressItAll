@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "What the main window may call: its own commands, events, the file pickers, the opener, drag-out.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "core:event:allow-emit",
+    "core:webview:allow-internal-toggle-devtools",
+    "dialog:allow-open",
+    "opener:allow-open-url",
+    "opener:allow-open-path",
+    "opener:allow-reveal-item-in-dir",
+    "drag:default"
+  ]
+}

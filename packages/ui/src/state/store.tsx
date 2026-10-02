@@ -107,8 +107,10 @@ export function reducer(state: AppState, action: Action): AppState {
           return { ...state, progress: { ...state.progress, [e.item_id]: { ...(state.progress[e.item_id] ?? { fraction: 0, etaMs: null, label: "" }), state: e.state, label: labelFor(e.state) } } };
         case "progress":
           return { ...state, progress: { ...state.progress, [e.item_id]: { ...(state.progress[e.item_id] ?? { state: { type: "encoding", attempt: 1 } }), fraction: e.fraction, etaMs: e.eta_ms === null ? null : Number(e.eta_ms), label: e.label } } };
-        case "item_done":
-          return { ...state, progress: { ...state.progress, [e.item_id]: { ...(state.progress[e.item_id] ?? { fraction: 1, etaMs: null, label: "" }), state: stateFor(e.outcome), fraction: 1, outcome: e.outcome } } };
+        case "item_done": {
+          const st = stateFor(e.outcome);
+          return { ...state, progress: { ...state.progress, [e.item_id]: { ...(state.progress[e.item_id] ?? { fraction: 1, etaMs: null, label: "" }), state: st, label: labelFor(st), fraction: 1, outcome: e.outcome } } };
+        }
         case "job_done":
           return { ...state, summary: e.summary, phase: "done" };
         default:

@@ -118,4 +118,11 @@ export interface EngineHost {
   };
 
   version(): Promise<{ app: string; build: string; engine: string }>;
+
+  /**
+   * Desktop: files arriving from outside the DOM (an OS drop on the window, a
+   * test hook). The UI subscribes once and feeds the sources to `addInputs`.
+   * Returns the unsubscribe function.
+   */
+  onExternalInputs?(cb: (sources: InputSource[]) => void): () => void;
 }
