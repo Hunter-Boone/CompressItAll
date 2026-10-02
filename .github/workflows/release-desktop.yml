@@ -15,6 +15,7 @@ permissions:
   contents: write
 
 env:
+  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
   CARGO_TERM_COLOR: always
   DOWNLOADS_REPO: Hunter-Boone/CompressItAll-Downloads-staging
 

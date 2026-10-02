@@ -47,7 +47,15 @@ fn fake_zip(working: bool) -> Vec<u8> {
             SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
         for name in ["ffmpeg", "ffprobe"] {
             let file = format!("{top}/{name}{}", if cfg!(windows) { ".exe" } else { "" });
-            w.start_file(file, exe).unwrap();
+            // An unrunnable binary has no exec bit (macOS would otherwise run a text file through sh).
+            let opts = if working {
+                exe
+            } else {
+                SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Stored)
+                    .unix_permissions(0o644)
+            };
+            w.start_file(file, opts).unwrap();
             if working {
                 w.write_all(
                     format!(
@@ -57,7 +65,10 @@ fn fake_zip(working: bool) -> Vec<u8> {
                 )
                 .unwrap();
             } else {
-                w.write_all(b"this is not a program\n").unwrap();
+                // A shebang pointing at a missing interpreter fails to spawn on every Unix (ENOENT),
+                // and a text .exe fails to spawn on Windows; both are the "blocked" case.
+                w.write_all(b"#!/nonexistent/interpreter\nthis is not a program\n")
+                    .unwrap();
             }
         }
         w.start_file(format!("{top}/LICENSE.md"), plain).unwrap();

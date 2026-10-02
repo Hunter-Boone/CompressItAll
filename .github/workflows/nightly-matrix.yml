@@ -5,6 +5,9 @@ on:
     - cron: "0 7 * * *"
   workflow_dispatch:
 
+env:
+  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+
 jobs:
   matrix:
     runs-on: ubuntu-22.04

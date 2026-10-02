@@ -33,6 +33,9 @@ targets = [
 ]
 
 # Only code that ends up in the shipped artefact: no test-only crates, no build.rs helpers (cc, cmake, bindgen).
+# Only look for licence files at the crate root, not in source headers.
+max-depth = 1
+
 ignore-dev-dependencies = true
 ignore-build-dependencies = true
 

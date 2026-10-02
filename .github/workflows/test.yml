@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 
 env:
+  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
   CARGO_TERM_COLOR: always
   RUSTUP_AUTO_INSTALL: "1"
 

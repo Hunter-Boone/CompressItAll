@@ -2,6 +2,8 @@
 # libdeflate, zstd) compile against the wasi-sdk sysroot instead. Install
 # wasi-sdk 25 at /opt/wasi-sdk (or symlink it there). See docs/DESIGN.md 2.5.
 [env]
+# audiopus_sys (libopus) ships a CMakeLists older than CMake 4 accepts without this.
+CMAKE_POLICY_VERSION_MINIMUM = "3.5"
 CC_wasm32_unknown_unknown = "/opt/wasi-sdk/bin/clang"
 AR_wasm32_unknown_unknown = "/opt/wasi-sdk/bin/llvm-ar"
 CFLAGS_wasm32_unknown_unknown = "--target=wasm32-unknown-unknown --sysroot=/opt/wasi-sdk/share/wasi-sysroot -I/opt/wasi-sdk/share/wasi-sysroot/include/wasm32-wasi -O2 -D__wasm32__ -D__wasi__ -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_MMAN -fno-exceptions"
