@@ -97,10 +97,24 @@ pub(crate) fn item_sizes(engine: &Engine, item: &InputItem, ctx: &Ctx) -> Sizes 
             lossless: original,
             floor: original * 7 / 10,
         },
-        Kind::Text => Sizes {
-            lossless: original / 4,
-            floor: original / 4,
-        },
+        Kind::Text => {
+            // Deflate is cheap: measure the real zip size (estimates were off by 2x on logs).
+            let z = if original <= 64_000_000 {
+                engine
+                    .reader
+                    .read(&item.source)
+                    .ok()
+                    .and_then(|b| planners::plain::zip_of(item.file_name(), &b).ok())
+                    .map(|z| z.len() as u64)
+                    .unwrap_or(original * 6 / 10)
+            } else {
+                original * 6 / 10
+            };
+            Sizes {
+                lossless: z,
+                floor: z,
+            }
+        }
         Kind::Other => Sizes {
             lossless: original,
             floor: original,
@@ -244,6 +258,7 @@ impl Engine {
             options: &req.options,
             allowed_image: allowed.image.clone(),
             allowed_audio: allowed.audio.clone(),
+            allowed_animated: allowed.animated.clone(),
             hard_bytes: limit.as_ref().map(|l| l.hard_bytes),
             smaller,
             cancel: &cancel_fn,
@@ -777,7 +792,7 @@ impl Engine {
                     );
                 }
                 let z = item.bytes / 4;
-                if budget.is_some_and(|b| z >= b) {
+                if budget.is_some_and(|b| z > b) {
                     return (
                         Prediction {
                             predicted_bytes: z,
@@ -1052,6 +1067,7 @@ pub(crate) fn ctx_clone<'a>(c: &Ctx<'a>) -> Ctx<'a> {
         options: c.options,
         allowed_image: c.allowed_image.clone(),
         allowed_audio: c.allowed_audio.clone(),
+        allowed_animated: c.allowed_animated.clone(),
         hard_bytes: c.hard_bytes,
         smaller: c.smaller,
         cancel: c.cancel,

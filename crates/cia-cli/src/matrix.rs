@@ -305,6 +305,7 @@ fn expected_refusal(name: &str, preset: &str, code: &RefusalCode) -> bool {
     match code {
         RefusalCode::Encrypted => n.contains("encrypted"),
         RefusalCode::CannotShrinkType => n.contains("random") || n.contains("corrupt"),
+        RefusalCode::TotalTooBig => n.contains("random"),
         RefusalCode::TooLongForLimit { .. } => preset != "smaller",
         RefusalCode::BelowQualityFloor => {
             n.contains("huge") || n.contains("48mp") || n.contains("big")

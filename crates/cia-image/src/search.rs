@@ -163,11 +163,11 @@ fn search_quality(
 ) -> Result<Option<(u8, u64)>, ImageError> {
     let (q_min, q_max) = c.quality_range().expect("lossy candidate");
     let s_hi = enc.run(c, q_max)?.len() as u64;
-    if s_hi < budget {
+    if s_hi <= budget {
         return Ok(Some((q_max, s_hi)));
     }
     let s_lo = enc.run(c, q_min)?.len() as u64;
-    if s_lo >= budget {
+    if s_lo > budget {
         return Ok(None);
     }
     let (mut lo, mut hi) = (q_min, q_max);
@@ -179,7 +179,7 @@ fn search_quality(
         let t = ((budget as f64).ln() - s_lo.ln()) / (s_hi.ln() - s_lo.ln());
         let q = ((lo as f64 + t * (hi - lo) as f64).round() as u8).clamp(lo + 1, hi - 1);
         let s = enc.run(c, q)?.len() as u64;
-        if s < budget {
+        if s <= budget {
             lo = q;
             s_lo = s as f64;
         } else {
@@ -191,8 +191,11 @@ fn search_quality(
 }
 
 fn label_for(c: Candidate, q: Option<u8>, score: Option<f32>, downscaled: bool) -> QualityLabel {
-    if !c.is_lossy() {
+    if c.is_exact() {
         return QualityLabel::Great;
+    }
+    if !c.is_lossy() {
+        return QualityLabel::Good; // palette-quantised
     }
     if let Some(s) = score {
         return if s >= 85.0 {
@@ -288,7 +291,7 @@ fn try_size(
             }
         } else {
             let bytes = e.run(c, 0)?.to_vec();
-            if (bytes.len() as u64) < budget {
+            if (bytes.len() as u64) <= budget {
                 Some(Found {
                     candidate: c,
                     quality: None,
@@ -321,16 +324,17 @@ fn try_size(
             fits.push(f);
         }
     }
-    if let Some(pos) = fits.iter().position(|f| !f.candidate.is_lossy()) {
-        let first_lossless = fits
+    if let Some(pos) = fits.iter().position(|f| f.candidate.is_exact()) {
+        // A pixel-exact candidate that fits wins immediately (3.4.5 rule 1), in candidate order.
+        let first = fits
             .iter()
-            .filter(|f| !f.candidate.is_lossy())
+            .filter(|f| f.candidate.is_exact())
             .min_by_key(|f| cands.iter().position(|c| *c == f.candidate))
             .map(|f| f.candidate)
             .unwrap();
         let idx = fits
             .iter()
-            .position(|f| f.candidate == first_lossless)
+            .position(|f| f.candidate == first)
             .unwrap_or(pos);
         return Ok(Some(fits.swap_remove(idx)));
     }
@@ -405,7 +409,8 @@ pub fn floor_size(
     })
 }
 
-/// Best lossless/optimised size (L_i for allocation): the lossless candidate when the class has one, else q_max lossy.
+/// Best lossless/optimised size (L_i for allocation): the smallest pixel-exact encoding, the
+/// original bytes when the source format is allowed, or the top-quality lossy encode otherwise.
 pub fn lossless_size(
     img: &DecodedImage,
     opts: &ImageOptions,
@@ -424,11 +429,31 @@ pub fn lossless_size(
         cancel,
     };
     let mut best = u64::MAX;
-    for c in cands.iter().take(2) {
-        let q = c.quality_range().map(|r| r.1).unwrap_or(0);
-        best = best.min(enc.run(*c, q)?.len() as u64);
+    let source_allowed = OutputImageFormat::parse(img.source.token())
+        .is_some_and(|f| opts.allowed_formats.contains(&f));
+    if source_allowed && work.width == img.width && work.height == img.height {
+        best = img.source_bytes;
     }
-    Ok(best.min(img.source_bytes))
+    for c in cands.iter().filter(|c| c.is_exact()) {
+        if let Some(est) = estimate_lossless(&work, cls.class, *c) {
+            if est > best.saturating_mul(2) {
+                continue;
+            }
+        }
+        best = best.min(enc.run(*c, 0)?.len() as u64);
+    }
+    if best == u64::MAX {
+        if let Some(c) = cands.iter().find(|c| c.is_lossy()) {
+            best = enc
+                .run(*c, c.quality_range().map(|r| r.1).unwrap_or(0))?
+                .len() as u64;
+        } else if let Some(c) = cands.first() {
+            best = enc.run(*c, 0)?.len() as u64;
+        } else {
+            best = img.source_bytes;
+        }
+    }
+    Ok(best.min(img.source_bytes.max(1)))
 }
 
 fn prepare(
@@ -527,14 +552,14 @@ pub fn compress(
         Mode::Fit { budget_bytes } => {
             let budget = *budget_bytes;
             // Original already fits: only the cheap lossless step (PNG) runs; JPEG is left alone.
-            if img.source_bytes < budget
+            if img.source_bytes <= budget
                 && !downscaled_by_option
                 && !(opts.flatten_transparency && img.has_alpha)
             {
                 if img.source == crate::SourceFormat::Png && cands.contains(&Candidate::PngLossless)
                 {
                     let n = enc.run(Candidate::PngLossless, 0)?.len() as u64;
-                    if n * 100 <= img.source_bytes * 95 {
+                    if n * 100 <= img.source_bytes * 95 && n <= budget {
                         let bytes = enc.run(Candidate::PngLossless, 0)?.to_vec();
                         return Ok(ImageOutcome::Encoded(finish(
                             &enc,

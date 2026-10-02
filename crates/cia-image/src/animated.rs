@@ -271,7 +271,7 @@ pub fn compress_animation(
                     }
                     return Ok(AnimOutcome::KeptOriginal);
                 }
-                Some(b) if (r.bytes.len() as u64) < b => return Ok(AnimOutcome::Encoded(r)),
+                Some(b) if (r.bytes.len() as u64) <= b => return Ok(AnimOutcome::Encoded(r)),
                 _ => best = Some(r),
             }
         }
@@ -286,7 +286,7 @@ pub fn compress_animation(
         }
         if let Some(r) = attempt(64, can_drop, Some(long_edge))? {
             smallest = smallest.min(r.bytes.len() as u64);
-            if (r.bytes.len() as u64) < b {
+            if (r.bytes.len() as u64) <= b {
                 return Ok(AnimOutcome::Encoded(r));
             }
             best = Some(r);

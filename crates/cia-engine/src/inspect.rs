@@ -39,6 +39,10 @@ impl Engine {
                 return item;
             }
         };
+        if head.is_empty() {
+            item.detail.format = "corrupt".into();
+            return item;
+        }
         let det = detect(
             &head,
             spec.rel_path

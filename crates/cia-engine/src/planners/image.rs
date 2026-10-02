@@ -150,15 +150,17 @@ pub fn run_animated(
             }
         }
     };
-    if !ctx.allowed_image.iter().any(|f| f == "gif") {
+    if budget.is_some_and(|b| (bytes.len() as u64) <= b)
+        && ctx.hard_bytes.is_none_or(|h| (bytes.len() as u64) < h)
+    {
+        return PlannerOutcome::KeptOriginal { attempts: vec![] };
+    }
+    if !ctx.allowed_animated.iter().any(|f| f == "gif") {
         return PlannerOutcome::Refused {
             code: RefusalCode::CannotShrinkType,
             smallest_bytes: Some(bytes.len() as u64),
             attempts: vec![],
         };
-    }
-    if budget.is_some_and(|b| (bytes.len() as u64) < b) {
-        return PlannerOutcome::KeptOriginal { attempts: vec![] };
     }
     match cia_image::animated::compress_animation(
         &anim,

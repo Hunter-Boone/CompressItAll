@@ -150,6 +150,7 @@ if want("video"):
                    "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p10le",
                    "-color_primaries", "bt2020", "-color_trc", trc, "-colorspace", "bt2020nc", *AAC, "-shortest", hdr=trc)
             except subprocess.CalledProcessError:
+                (OUT / name).unlink(missing_ok=True)
                 print(f"  {name}: this ffmpeg lacks zscale or 10-bit x264; skipped")
         # VFR: variable frame timing from setpts
         ff("v_vfr.mp4", "-f", "lavfi", "-i", "testsrc2=size=1280x720:rate=60", *SINE, "-t", "10", "-vf", "setpts='PTS+if(mod(N,7),0,0.5/TB)'", "-fps_mode", "vfr", *X264, *AAC, "-shortest", vfr=True)

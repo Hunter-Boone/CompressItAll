@@ -80,6 +80,10 @@ impl Candidate {
             Candidate::Jpeg | Candidate::WebpLossy | Candidate::Avif
         )
     }
+    /// Pixel-exact encodings. Palette PNGs are not: they quantise colours.
+    pub fn is_exact(self) -> bool {
+        matches!(self, Candidate::PngLossless | Candidate::WebpLossless)
+    }
     /// Quality search bounds (3.4.4); None for lossless/palette candidates.
     pub fn quality_range(self) -> Option<(u8, u8)> {
         match self {

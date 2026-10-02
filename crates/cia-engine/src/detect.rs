@@ -18,18 +18,46 @@ fn ext_of(name: &str) -> String {
         .unwrap_or_default()
 }
 
-/// Sniff a ZIP's purpose from its central directory names: OOXML, ODF, EPUB or plain archive.
+/// The names of the first few local file headers in a ZIP (never nested content).
+fn zip_leading_names(head: &[u8], max: usize) -> Vec<String> {
+    let mut names = Vec::new();
+    let mut i = 0usize;
+    while names.len() < max && i + 30 <= head.len() && &head[i..i + 4] == b"PK\x03\x04" {
+        let flags = u16::from_le_bytes([head[i + 6], head[i + 7]]);
+        let comp =
+            u32::from_le_bytes([head[i + 18], head[i + 19], head[i + 20], head[i + 21]]) as usize;
+        let nlen = u16::from_le_bytes([head[i + 26], head[i + 27]]) as usize;
+        let xlen = u16::from_le_bytes([head[i + 28], head[i + 29]]) as usize;
+        let start = i + 30;
+        if start + nlen > head.len() {
+            break;
+        }
+        names.push(String::from_utf8_lossy(&head[start..start + nlen]).to_string());
+        // With a data descriptor (bit 3) the size is unknown; stop after this entry.
+        if flags & 0x08 != 0 {
+            break;
+        }
+        i = start + nlen + xlen + comp;
+    }
+    names
+}
+
+/// Sniff a ZIP's purpose from its own entry names: OOXML, ODF, EPUB or plain archive.
 fn zip_flavour(head: &[u8], ext: &str) -> Detected {
-    let hay = String::from_utf8_lossy(head);
-    let looks = |s: &str| hay.contains(s);
-    if looks("[Content_Types].xml") || looks("word/") || looks("ppt/") || looks("xl/") {
+    let names = zip_leading_names(head, 6);
+    let has = |pred: &dyn Fn(&str) -> bool| names.iter().any(|n| pred(n));
+    if has(&|n| {
+        n == "[Content_Types].xml"
+            || n.starts_with("word/")
+            || n.starts_with("ppt/")
+            || n.starts_with("xl/")
+            || n.starts_with("docProps/")
+            || n == "_rels/.rels"
+    }) {
         let fmt = match ext {
-            "docm" | "pptm" | "xlsm" => ext.to_string(),
-            "pptx" => "pptx".into(),
-            "xlsx" => "xlsx".into(),
-            "docx" => "docx".into(),
-            _ if looks("ppt/") => "pptx".into(),
-            _ if looks("xl/") => "xlsx".into(),
+            "docm" | "pptm" | "xlsm" | "pptx" | "xlsx" | "docx" => ext.to_string(),
+            _ if has(&|n| n.starts_with("ppt/")) => "pptx".into(),
+            _ if has(&|n| n.starts_with("xl/")) => "xlsx".into(),
             _ => "docx".into(),
         };
         return Detected {
@@ -37,24 +65,27 @@ fn zip_flavour(head: &[u8], ext: &str) -> Detected {
             format: fmt,
         };
     }
-    if looks("mimetypeapplication/epub") {
-        return Detected {
-            kind: Kind::OfficeDoc,
-            format: "epub".into(),
-        };
-    }
-    if looks("mimetypeapplication/vnd.oasis.opendocument") {
-        let fmt = if looks("opendocument.presentation") {
-            "odp"
-        } else if looks("opendocument.spreadsheet") {
-            "ods"
-        } else {
-            "odt"
-        };
-        return Detected {
-            kind: Kind::OfficeDoc,
-            format: fmt.into(),
-        };
+    if names.first().is_some_and(|n| n == "mimetype") {
+        let hay = String::from_utf8_lossy(&head[..head.len().min(200)]);
+        if hay.contains("application/epub") {
+            return Detected {
+                kind: Kind::OfficeDoc,
+                format: "epub".into(),
+            };
+        }
+        if hay.contains("application/vnd.oasis.opendocument") {
+            let fmt = if hay.contains("opendocument.presentation") {
+                "odp"
+            } else if hay.contains("opendocument.spreadsheet") {
+                "ods"
+            } else {
+                "odt"
+            };
+            return Detected {
+                kind: Kind::OfficeDoc,
+                format: fmt.into(),
+            };
+        }
     }
     Detected {
         kind: Kind::Archive,
@@ -370,8 +401,22 @@ mod tests {
     }
     #[test]
     fn zip_flavours() {
-        let mut docx = b"PK\x03\x04".to_vec();
-        docx.extend_from_slice(b"...[Content_Types].xml...word/document.xml");
+        fn local(name: &str, data: &[u8]) -> Vec<u8> {
+            let mut v = b"PK\x03\x04".to_vec();
+            v.extend_from_slice(&[20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+            v.extend_from_slice(&(data.len() as u32).to_le_bytes());
+            v.extend_from_slice(&(data.len() as u32).to_le_bytes());
+            v.extend_from_slice(&(name.len() as u16).to_le_bytes());
+            v.extend_from_slice(&0u16.to_le_bytes());
+            v.extend_from_slice(name.as_bytes());
+            v.extend_from_slice(data);
+            v
+        }
+        let docx = [
+            local("[Content_Types].xml", b"<Types/>"),
+            local("word/document.xml", b"<w/>"),
+        ]
+        .concat();
         assert_eq!(
             detect(&docx, "x.docx"),
             Detected {
@@ -379,10 +424,16 @@ mod tests {
                 format: "docx".into()
             }
         );
-        let mut epub = b"PK\x03\x04".to_vec();
-        epub.extend_from_slice(b"\x00\x00mimetypeapplication/epub+zip");
+        let epub = local("mimetype", b"application/epub+zip");
         assert_eq!(detect(&epub, "x.epub").format, "epub");
-        let plain = b"PK\x03\x04\x14\x00\x00\x00\x08\x00photo.jpg".to_vec();
+        // A plain zip whose first entry is itself a docx must stay an archive.
+        let nested = [
+            local("deck.pptx", &docx),
+            local("photo.jpg", b"\xff\xd8\xff"),
+        ]
+        .concat();
+        assert_eq!(detect(&nested, "x.zip").kind, Kind::Archive);
+        let plain = local("photo.jpg", b"\xff\xd8\xff");
         assert_eq!(detect(&plain, "x.zip").kind, Kind::Archive);
     }
     #[test]

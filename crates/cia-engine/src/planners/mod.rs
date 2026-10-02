@@ -55,6 +55,7 @@ pub struct Ctx<'a> {
     pub options: &'a JobOptions,
     pub allowed_image: Vec<String>,
     pub allowed_audio: Vec<String>,
+    pub allowed_animated: Vec<String>,
     pub hard_bytes: Option<u64>,
     pub smaller: Option<SmallerLevel>,
     pub cancel: &'a (dyn Fn() -> bool + Sync),

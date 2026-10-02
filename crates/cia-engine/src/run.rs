@@ -71,6 +71,7 @@ impl Engine {
             options: &req.options,
             allowed_image: allowed.image.clone(),
             allowed_audio: allowed.audio.clone(),
+            allowed_animated: allowed.animated.clone(),
             hard_bytes: limit.as_ref().map(|l| l.hard_bytes),
             smaller,
             cancel: &cancel_fn,

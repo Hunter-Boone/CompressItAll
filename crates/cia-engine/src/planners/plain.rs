@@ -14,7 +14,7 @@ pub fn run_text(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) 
     let Some(b) = budget else {
         return PlannerOutcome::KeptOriginal { attempts: vec![] };
     };
-    if (bytes.len() as u64) < b {
+    if (bytes.len() as u64) <= b {
         return PlannerOutcome::KeptOriginal { attempts: vec![] };
     }
     (ctx.progress)(0.3, "Zipping");
@@ -34,13 +34,13 @@ pub fn run_text(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) 
                 serde_json::json!({}),
                 Some(size),
                 None,
-                if size < b {
+                if size <= b {
                     AttemptVerdict::Fits
                 } else {
                     AttemptVerdict::Over { by_bytes: size - b }
                 },
             );
-            if size < b {
+            if size <= b {
                 let ok = cia_archive::verify(&z, std::slice::from_ref(&name)).is_ok();
                 PlannerOutcome::Encoded(Encoded {
                     bytes: z,
@@ -79,7 +79,7 @@ pub fn run_text(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) 
 /// Other: try Deflate and LZMA2 on the first 4 MiB; if neither saves 3 percent, it cannot shrink.
 pub fn run_other(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) -> PlannerOutcome {
     if let Some(b) = budget {
-        if (bytes.len() as u64) < b {
+        if (bytes.len() as u64) <= b {
             return PlannerOutcome::KeptOriginal { attempts: vec![] };
         }
     }
@@ -106,7 +106,7 @@ pub fn run_other(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx)
     match zip_of(&name, bytes) {
         Ok(z) => {
             let size = z.len() as u64;
-            let fits = budget.is_none_or(|b| size < b);
+            let fits = budget.is_none_or(|b| size <= b);
             let a = attempt(
                 1,
                 &item.id,
