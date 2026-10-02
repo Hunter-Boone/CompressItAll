@@ -109,18 +109,32 @@ pub struct VideoTranscodeResult {
     pub kept_original: bool,
 }
 
+/// Cooperative cancellation. `cancel()` flips a flag; hosts that cannot call
+/// into the engine while it runs (a Web Worker executing a synchronous `run`)
+/// attach a poll closure with [`CancelToken::with_poll`] that reads a flag the
+/// main thread writes (an `Int32Array` over a `SharedArrayBuffer`).
 #[derive(Clone, Default)]
-pub struct CancelToken(Arc<AtomicBool>);
+pub struct CancelToken {
+    flag: Arc<AtomicBool>,
+    poll: Option<Arc<dyn Fn() -> bool + Send + Sync>>,
+}
 
 impl CancelToken {
     pub fn new() -> Self {
         Self::default()
     }
+    /// A token that is also cancelled whenever `poll()` returns true.
+    pub fn with_poll(poll: Arc<dyn Fn() -> bool + Send + Sync>) -> Self {
+        Self {
+            flag: Arc::new(AtomicBool::new(false)),
+            poll: Some(poll),
+        }
+    }
     pub fn cancel(&self) {
-        self.0.store(true, Ordering::SeqCst);
+        self.flag.store(true, Ordering::SeqCst);
     }
     pub fn is_cancelled(&self) -> bool {
-        self.0.load(Ordering::SeqCst)
+        self.flag.load(Ordering::SeqCst) || self.poll.as_ref().is_some_and(|p| p())
     }
 }
 

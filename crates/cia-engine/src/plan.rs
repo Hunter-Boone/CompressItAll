@@ -150,6 +150,19 @@ pub(crate) fn budgets(
         0
     };
     let total = limit.raw_budget_bytes.saturating_sub(packaging_overhead);
+    // The originals already fit together: nothing to re-encode, so skip pass 0 (3.4: "when the
+    // original already fits ... JPEG is left alone"; 3.10 item 6: kept originals are copied).
+    // Each item still gets its per-kind budget so an oversized single file is handled on its own.
+    let total_in: u64 = req.items.iter().map(|i| i.bytes).sum();
+    if total_in <= total {
+        return Ok((
+            req.items
+                .iter()
+                .map(|i| Some(limit.budget_for(i.kind)))
+                .collect(),
+            None,
+        ));
+    }
     let sizes: Vec<ItemSizes> = req
         .items
         .iter()

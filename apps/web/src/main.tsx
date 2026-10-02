@@ -15,6 +15,13 @@ async function pickHost(): Promise<EngineHost> {
   return new WebHost();
 }
 
+// Offline after the first visit (DESIGN.md 2.7). Production only: the dev server has no sw.js.
+if (import.meta.env.PROD && "serviceWorker" in navigator && new URLSearchParams(location.search).get("nosw") !== "1") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) => console.warn("service worker", e));
+  });
+}
+
 pickHost().then((host) => {
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
