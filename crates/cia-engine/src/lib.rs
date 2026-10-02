@@ -117,8 +117,20 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(reader: Arc<dyn InputReader>, sink: Arc<dyn OutputSink>, caps: Capabilities) -> Self {
-        Self { reader, sink, video: None, caps, temp_dir: None, parallelism: default_parallelism(), preview_cache: Default::default() }
+    pub fn new(
+        reader: Arc<dyn InputReader>,
+        sink: Arc<dyn OutputSink>,
+        caps: Capabilities,
+    ) -> Self {
+        Self {
+            reader,
+            sink,
+            video: None,
+            caps,
+            temp_dir: None,
+            parallelism: default_parallelism(),
+            preview_cache: Default::default(),
+        }
     }
     pub fn with_video(mut self, video: Arc<dyn VideoBackend>) -> Self {
         self.caps.ffmpeg = video.capabilities();
@@ -138,7 +150,10 @@ fn default_parallelism() -> usize {
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::thread::available_parallelism().map(|n| n.get()).unwrap_or(2).clamp(1, 8)
+        std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(2)
+            .clamp(1, 8)
     }
 }
 
@@ -150,7 +165,10 @@ pub fn now_ms() -> u64 {
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as u64).unwrap_or(0)
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0)
     }
 }
 

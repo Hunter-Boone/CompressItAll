@@ -38,7 +38,11 @@ pub struct MemorySink {
 
 impl MemorySink {
     fn key(dir: &str, name: &str) -> String {
-        if dir.is_empty() { name.to_string() } else { format!("{}/{}", dir.trim_end_matches('/'), name) }
+        if dir.is_empty() {
+            name.to_string()
+        } else {
+            format!("{}/{}", dir.trim_end_matches('/'), name)
+        }
     }
     pub fn get(&self, path: &str) -> Option<Vec<u8>> {
         self.files.lock().unwrap().get(path).cloned()
@@ -50,7 +54,10 @@ impl MemorySink {
 
 impl OutputSink for MemorySink {
     fn exists(&self, dir: &str, file_name: &str) -> bool {
-        self.files.lock().unwrap().contains_key(&Self::key(dir, file_name))
+        self.files
+            .lock()
+            .unwrap()
+            .contains_key(&Self::key(dir, file_name))
     }
     fn write(&self, dest: &OutputDest, bytes: &[u8]) -> Result<OutputLocation, EngineError> {
         let key = Self::key(&dest.dir, &dest.file_name);
@@ -63,11 +70,21 @@ impl OutputSink for MemorySink {
     }
     fn len(&self, location: &OutputLocation) -> Result<u64, EngineError> {
         let (OutputLocation::Opfs { path } | OutputLocation::Path { path }) = location;
-        self.files.lock().unwrap().get(path).map(|b| b.len() as u64).ok_or_else(|| EngineError::Io(format!("{path} missing")))
+        self.files
+            .lock()
+            .unwrap()
+            .get(path)
+            .map(|b| b.len() as u64)
+            .ok_or_else(|| EngineError::Io(format!("{path} missing")))
     }
     fn read(&self, location: &OutputLocation) -> Result<Vec<u8>, EngineError> {
         let (OutputLocation::Opfs { path } | OutputLocation::Path { path }) = location;
-        self.files.lock().unwrap().get(path).cloned().ok_or_else(|| EngineError::Io(format!("{path} missing")))
+        self.files
+            .lock()
+            .unwrap()
+            .get(path)
+            .cloned()
+            .ok_or_else(|| EngineError::Io(format!("{path} missing")))
     }
     fn remove(&self, location: &OutputLocation) {
         let (OutputLocation::Opfs { path } | OutputLocation::Path { path }) = location;
@@ -92,7 +109,9 @@ pub mod fs_sink {
 
     impl FsSink {
         pub fn new(job_id: &str) -> Self {
-            Self { job_id: job_id.to_string() }
+            Self {
+                job_id: job_id.to_string(),
+            }
         }
         /// Remove `.smidge-*.partial` files older than one hour in `dir`.
         pub fn clean_partials(dir: &Path) {
@@ -101,7 +120,11 @@ pub mod fs_sink {
                 let name = e.file_name().to_string_lossy().to_string();
                 if name.contains(".smidge-") && name.ends_with(".partial") {
                     if let Ok(m) = e.metadata() {
-                        if m.modified().ok().and_then(|t| t.elapsed().ok()).is_some_and(|age| age.as_secs() > 3600) {
+                        if m.modified()
+                            .ok()
+                            .and_then(|t| t.elapsed().ok())
+                            .is_some_and(|age| age.as_secs() > 3600)
+                        {
                             let _ = fs::remove_file(e.path());
                         }
                     }
@@ -117,12 +140,22 @@ pub mod fs_sink {
         fn write(&self, dest: &OutputDest, bytes: &[u8]) -> Result<OutputLocation, EngineError> {
             let dir = PathBuf::from(&dest.dir);
             fs::create_dir_all(&dir).map_err(|e| map_io(&e, "not_writable"))?;
-            let stem = dest.file_name.rsplit_once('.').map(|(s, _)| s.to_string()).unwrap_or(dest.file_name.clone());
+            let stem = dest
+                .file_name
+                .rsplit_once('.')
+                .map(|(s, _)| s.to_string())
+                .unwrap_or(dest.file_name.clone());
             let tmp = dir.join(format!(".{}.smidge-{}.partial", stem, self.job_id));
             {
                 let mut f = fs::File::create(&tmp).map_err(|e| map_io(&e, "not_writable"))?;
-                f.write_all(bytes).map_err(|e| { let _ = fs::remove_file(&tmp); map_io(&e, "disk_full") })?;
-                f.sync_all().map_err(|e| { let _ = fs::remove_file(&tmp); map_io(&e, "disk_full") })?;
+                f.write_all(bytes).map_err(|e| {
+                    let _ = fs::remove_file(&tmp);
+                    map_io(&e, "disk_full")
+                })?;
+                f.sync_all().map_err(|e| {
+                    let _ = fs::remove_file(&tmp);
+                    map_io(&e, "disk_full")
+                })?;
             }
             let final_path = dir.join(&dest.file_name);
             // hard_link fails with AlreadyExists and never replaces; fall back to create_new + copy where unsupported.
@@ -132,20 +165,42 @@ pub mod fs_sink {
                 }
                 Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                     let _ = fs::remove_file(&tmp);
-                    return Err(EngineError::Io(format!("{} already exists", final_path.display())));
+                    return Err(EngineError::Io(format!(
+                        "{} already exists",
+                        final_path.display()
+                    )));
                 }
                 Err(_) => {
-                    let mut f = fs::OpenOptions::new().write(true).create_new(true).open(&final_path).map_err(|e| { let _ = fs::remove_file(&tmp); if e.kind() == std::io::ErrorKind::AlreadyExists { EngineError::Io("exists".into()) } else { map_io(&e, "not_writable") } })?;
-                    f.write_all(bytes).map_err(|e| { let _ = fs::remove_file(&tmp); let _ = fs::remove_file(&final_path); map_io(&e, "disk_full") })?;
+                    let mut f = fs::OpenOptions::new()
+                        .write(true)
+                        .create_new(true)
+                        .open(&final_path)
+                        .map_err(|e| {
+                            let _ = fs::remove_file(&tmp);
+                            if e.kind() == std::io::ErrorKind::AlreadyExists {
+                                EngineError::Io("exists".into())
+                            } else {
+                                map_io(&e, "not_writable")
+                            }
+                        })?;
+                    f.write_all(bytes).map_err(|e| {
+                        let _ = fs::remove_file(&tmp);
+                        let _ = fs::remove_file(&final_path);
+                        map_io(&e, "disk_full")
+                    })?;
                     f.sync_all().ok();
                     let _ = fs::remove_file(&tmp);
                 }
             }
-            Ok(OutputLocation::Path { path: final_path.to_string_lossy().to_string() })
+            Ok(OutputLocation::Path {
+                path: final_path.to_string_lossy().to_string(),
+            })
         }
         fn len(&self, location: &OutputLocation) -> Result<u64, EngineError> {
             let (OutputLocation::Opfs { path } | OutputLocation::Path { path }) = location;
-            fs::metadata(path).map(|m| m.len()).map_err(|e| EngineError::Io(e.to_string()))
+            fs::metadata(path)
+                .map(|m| m.len())
+                .map_err(|e| EngineError::Io(e.to_string()))
         }
         fn read(&self, location: &OutputLocation) -> Result<Vec<u8>, EngineError> {
             let (OutputLocation::Opfs { path } | OutputLocation::Path { path }) = location;
@@ -177,11 +232,23 @@ pub mod fs_sink {
     impl crate::InputReader for FsReader {
         fn read(&self, source: &cia_core::SourceRef) -> Result<Vec<u8>, EngineError> {
             match source {
-                cia_core::SourceRef::Path { path } => fs::read(path).map_err(|e| if e.kind() == std::io::ErrorKind::NotFound { EngineError::Io("source_vanished".into()) } else { EngineError::Io(e.to_string()) }),
-                cia_core::SourceRef::Handle { .. } => Err(EngineError::Unsupported("handle on desktop".into())),
+                cia_core::SourceRef::Path { path } => fs::read(path).map_err(|e| {
+                    if e.kind() == std::io::ErrorKind::NotFound {
+                        EngineError::Io("source_vanished".into())
+                    } else {
+                        EngineError::Io(e.to_string())
+                    }
+                }),
+                cia_core::SourceRef::Handle { .. } => {
+                    Err(EngineError::Unsupported("handle on desktop".into()))
+                }
             }
         }
-        fn read_head(&self, source: &cia_core::SourceRef, n: usize) -> Result<Vec<u8>, EngineError> {
+        fn read_head(
+            &self,
+            source: &cia_core::SourceRef,
+            n: usize,
+        ) -> Result<Vec<u8>, EngineError> {
             use std::io::Read;
             match source {
                 cia_core::SourceRef::Path { path } => {
@@ -189,7 +256,9 @@ pub mod fs_sink {
                     let mut buf = vec![0u8; n];
                     let mut got = 0;
                     while got < n {
-                        let k = f.read(&mut buf[got..]).map_err(|e| EngineError::Io(e.to_string()))?;
+                        let k = f
+                            .read(&mut buf[got..])
+                            .map_err(|e| EngineError::Io(e.to_string()))?;
                         if k == 0 {
                             break;
                         }
@@ -198,18 +267,26 @@ pub mod fs_sink {
                     buf.truncate(got);
                     Ok(buf)
                 }
-                cia_core::SourceRef::Handle { .. } => Err(EngineError::Unsupported("handle on desktop".into())),
+                cia_core::SourceRef::Handle { .. } => {
+                    Err(EngineError::Unsupported("handle on desktop".into()))
+                }
             }
         }
         fn len(&self, source: &cia_core::SourceRef) -> Result<u64, EngineError> {
             match source {
-                cia_core::SourceRef::Path { path } => fs::metadata(path).map(|m| m.len()).map_err(|e| EngineError::Io(e.to_string())),
-                cia_core::SourceRef::Handle { .. } => Err(EngineError::Unsupported("handle on desktop".into())),
+                cia_core::SourceRef::Path { path } => fs::metadata(path)
+                    .map(|m| m.len())
+                    .map_err(|e| EngineError::Io(e.to_string())),
+                cia_core::SourceRef::Handle { .. } => {
+                    Err(EngineError::Unsupported("handle on desktop".into()))
+                }
             }
         }
         fn parent_dir(&self, source: &cia_core::SourceRef) -> Option<String> {
             match source {
-                cia_core::SourceRef::Path { path } => Path::new(path).parent().map(|p| p.to_string_lossy().to_string()),
+                cia_core::SourceRef::Path { path } => Path::new(path)
+                    .parent()
+                    .map(|p| p.to_string_lossy().to_string()),
                 _ => None,
             }
         }

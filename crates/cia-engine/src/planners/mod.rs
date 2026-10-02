@@ -29,9 +29,19 @@ pub struct Encoded {
 #[derive(Debug, Clone)]
 pub enum PlannerOutcome {
     Encoded(Encoded),
-    KeptOriginal { attempts: Vec<Attempt> },
-    Refused { code: RefusalCode, smallest_bytes: Option<u64>, attempts: Vec<Attempt> },
-    Failed { code: &'static str, message: Option<String>, closest_bytes: Option<u64> },
+    KeptOriginal {
+        attempts: Vec<Attempt>,
+    },
+    Refused {
+        code: RefusalCode,
+        smallest_bytes: Option<u64>,
+        attempts: Vec<Attempt>,
+    },
+    Failed {
+        code: &'static str,
+        message: Option<String>,
+        closest_bytes: Option<u64>,
+    },
 }
 
 /// Sizes used by the per-message allocator (DESIGN.md 3.9.1).
@@ -57,6 +67,23 @@ impl Ctx<'_> {
     }
 }
 
-pub fn attempt(n: u32, item_id: &str, encoder: &str, params: serde_json::Value, bytes: Option<u64>, score: Option<f32>, verdict: AttemptVerdict) -> Attempt {
-    Attempt { n, item_id: item_id.to_string(), encoder: encoder.to_string(), params, output_bytes: bytes, score, elapsed_ms: 0, verdict }
+pub fn attempt(
+    n: u32,
+    item_id: &str,
+    encoder: &str,
+    params: serde_json::Value,
+    bytes: Option<u64>,
+    score: Option<f32>,
+    verdict: AttemptVerdict,
+) -> Attempt {
+    Attempt {
+        n,
+        item_id: item_id.to_string(),
+        encoder: encoder.to_string(),
+        params,
+        output_bytes: bytes,
+        score,
+        elapsed_ms: 0,
+        verdict,
+    }
 }

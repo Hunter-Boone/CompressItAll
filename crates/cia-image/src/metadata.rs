@@ -17,9 +17,18 @@ pub struct ExifSummary {
 }
 
 pub fn read_exif(bytes: &[u8]) -> Option<ExifSummary> {
-    let exif = exif::Reader::new().read_from_container(&mut Cursor::new(bytes)).ok()?;
-    let get = |tag: exif::Tag| exif.get_field(tag, exif::In::PRIMARY).map(|f| f.display_value().to_string());
-    let orientation = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY).and_then(|f| f.value.get_uint(0)).filter(|v| (1..=8).contains(v)).unwrap_or(1);
+    let exif = exif::Reader::new()
+        .read_from_container(&mut Cursor::new(bytes))
+        .ok()?;
+    let get = |tag: exif::Tag| {
+        exif.get_field(tag, exif::In::PRIMARY)
+            .map(|f| f.display_value().to_string())
+    };
+    let orientation = exif
+        .get_field(exif::Tag::Orientation, exif::In::PRIMARY)
+        .and_then(|f| f.value.get_uint(0))
+        .filter(|v| (1..=8).contains(v))
+        .unwrap_or(1);
     let has_gps = exif.fields().any(|f| f.tag.context() == exif::Context::Gps);
     Some(ExifSummary {
         orientation,
@@ -47,30 +56,73 @@ pub fn orientation_of(bytes: &[u8]) -> u32 {
 /// Copy the kept EXIF fields (date, camera, exposure; GPS only when asked)
 /// from the source into a freshly encoded JPEG/PNG/WebP. Returns the input
 /// unchanged when there is nothing to copy or writing is not possible.
-pub fn write_kept_exif(output: Vec<u8>, source: &[u8], keep_location: bool, format: crate::OutputImageFormat) -> Vec<u8> {
+pub fn write_kept_exif(
+    output: Vec<u8>,
+    source: &[u8],
+    keep_location: bool,
+    format: crate::OutputImageFormat,
+) -> Vec<u8> {
     use little_exif::exif_tag::ExifTag;
     use little_exif::filetype::FileExtension;
     use little_exif::metadata::Metadata;
     let ext = match format {
         crate::OutputImageFormat::Jpeg => FileExtension::JPEG,
-        crate::OutputImageFormat::Png => FileExtension::PNG { as_zTXt_chunk: false },
+        crate::OutputImageFormat::Png => FileExtension::PNG {
+            as_zTXt_chunk: false,
+        },
         crate::OutputImageFormat::Webp => FileExtension::WEBP,
         _ => return output,
     };
     let src_ext = match crate::decode::sniff(source) {
         crate::SourceFormat::Jpeg => FileExtension::JPEG,
-        crate::SourceFormat::Png => FileExtension::PNG { as_zTXt_chunk: false },
+        crate::SourceFormat::Png => FileExtension::PNG {
+            as_zTXt_chunk: false,
+        },
         crate::SourceFormat::Webp => FileExtension::WEBP,
         crate::SourceFormat::Tiff => FileExtension::TIFF,
         _ => return output,
     };
-    let Ok(src_meta) = Metadata::new_from_vec(&source.to_vec(), src_ext) else { return output };
+    let Ok(src_meta) = Metadata::new_from_vec(&source.to_vec(), src_ext) else {
+        return output;
+    };
     let mut meta = Metadata::new();
     let mut copied = 0;
     for tag in src_meta.into_iter() {
         let keep = match tag {
-            ExifTag::DateTimeOriginal(_) | ExifTag::CreateDate(_) | ExifTag::ModifyDate(_) | ExifTag::Make(_) | ExifTag::Model(_) | ExifTag::LensModel(_) | ExifTag::ExposureTime(_) | ExifTag::FNumber(_) | ExifTag::ISO(_) | ExifTag::FocalLength(_) | ExifTag::ExposureProgram(_) | ExifTag::Flash(_) | ExifTag::WhiteBalance(_) | ExifTag::Software(_) | ExifTag::Artist(_) | ExifTag::Copyright(_) | ExifTag::ImageDescription(_) => true,
-            ExifTag::GPSLatitude(_) | ExifTag::GPSLatitudeRef(_) | ExifTag::GPSLongitude(_) | ExifTag::GPSLongitudeRef(_) | ExifTag::GPSAltitude(_) | ExifTag::GPSAltitudeRef(_) | ExifTag::GPSTimeStamp(_) | ExifTag::GPSDateStamp(_) | ExifTag::GPSSpeed(_) | ExifTag::GPSSpeedRef(_) | ExifTag::GPSImgDirection(_) | ExifTag::GPSImgDirectionRef(_) | ExifTag::GPSDestBearing(_) | ExifTag::GPSDestBearingRef(_) | ExifTag::GPSHPositioningError(_) | ExifTag::GPSVersionID(_) | ExifTag::GPSMapDatum(_) => keep_location,
+            ExifTag::DateTimeOriginal(_)
+            | ExifTag::CreateDate(_)
+            | ExifTag::ModifyDate(_)
+            | ExifTag::Make(_)
+            | ExifTag::Model(_)
+            | ExifTag::LensModel(_)
+            | ExifTag::ExposureTime(_)
+            | ExifTag::FNumber(_)
+            | ExifTag::ISO(_)
+            | ExifTag::FocalLength(_)
+            | ExifTag::ExposureProgram(_)
+            | ExifTag::Flash(_)
+            | ExifTag::WhiteBalance(_)
+            | ExifTag::Software(_)
+            | ExifTag::Artist(_)
+            | ExifTag::Copyright(_)
+            | ExifTag::ImageDescription(_) => true,
+            ExifTag::GPSLatitude(_)
+            | ExifTag::GPSLatitudeRef(_)
+            | ExifTag::GPSLongitude(_)
+            | ExifTag::GPSLongitudeRef(_)
+            | ExifTag::GPSAltitude(_)
+            | ExifTag::GPSAltitudeRef(_)
+            | ExifTag::GPSTimeStamp(_)
+            | ExifTag::GPSDateStamp(_)
+            | ExifTag::GPSSpeed(_)
+            | ExifTag::GPSSpeedRef(_)
+            | ExifTag::GPSImgDirection(_)
+            | ExifTag::GPSImgDirectionRef(_)
+            | ExifTag::GPSDestBearing(_)
+            | ExifTag::GPSDestBearingRef(_)
+            | ExifTag::GPSHPositioningError(_)
+            | ExifTag::GPSVersionID(_)
+            | ExifTag::GPSMapDatum(_) => keep_location,
             _ => false,
         };
         if keep {

@@ -18,7 +18,10 @@ pub mod verify;
 pub use candidates::{Candidate, OutputImageFormat};
 pub use classify::{classify, Class, Classification};
 pub use decode::{decode, inspect, DecodedImage, ImageInfo, SourceFormat};
-pub use search::{compress, floor_size, lossless_size, ImageAttempt, ImageOptions, ImageOutcome, ImageResult, Mode};
+pub use search::{
+    compress, floor_size, lossless_size, ImageAttempt, ImageOptions, ImageOutcome, ImageResult,
+    Mode,
+};
 pub use verify::{verify, Expect};
 
 #[derive(Debug, thiserror::Error)]

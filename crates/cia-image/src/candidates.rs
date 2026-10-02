@@ -75,7 +75,10 @@ impl Candidate {
         }
     }
     pub fn is_lossy(self) -> bool {
-        matches!(self, Candidate::Jpeg | Candidate::WebpLossy | Candidate::Avif)
+        matches!(
+            self,
+            Candidate::Jpeg | Candidate::WebpLossy | Candidate::Avif
+        )
     }
     /// Quality search bounds (3.4.4); None for lossless/palette candidates.
     pub fn quality_range(self) -> Option<(u8, u8)> {
@@ -99,12 +102,34 @@ impl Candidate {
 
 /// The ordered candidate list for a class/alpha pair, filtered by allowed formats.
 /// `modern` enables AVIF (Smaller mode with "Modern formats").
-pub fn candidates_for(class: Class, has_alpha: bool, allowed: &[OutputImageFormat], modern: bool, source_format_only: Option<OutputImageFormat>) -> Vec<Candidate> {
+pub fn candidates_for(
+    class: Class,
+    has_alpha: bool,
+    allowed: &[OutputImageFormat],
+    modern: bool,
+    source_format_only: Option<OutputImageFormat>,
+) -> Vec<Candidate> {
     let all: Vec<Candidate> = match (class, has_alpha) {
         (Class::Photo, false) => vec![Candidate::Jpeg, Candidate::WebpLossy, Candidate::Avif],
-        (Class::Photo, true) => vec![Candidate::WebpLossy, Candidate::PngPalette(256), Candidate::PngLossless],
-        (Class::Graphic, false) => vec![Candidate::PngLossless, Candidate::WebpLossless, Candidate::PngPalette(256), Candidate::PngPalette(128), Candidate::PngPalette(64), Candidate::Jpeg],
-        (Class::Graphic, true) => vec![Candidate::PngLossless, Candidate::WebpLossless, Candidate::PngPalette(256), Candidate::WebpLossy],
+        (Class::Photo, true) => vec![
+            Candidate::WebpLossy,
+            Candidate::PngPalette(256),
+            Candidate::PngLossless,
+        ],
+        (Class::Graphic, false) => vec![
+            Candidate::PngLossless,
+            Candidate::WebpLossless,
+            Candidate::PngPalette(256),
+            Candidate::PngPalette(128),
+            Candidate::PngPalette(64),
+            Candidate::Jpeg,
+        ],
+        (Class::Graphic, true) => vec![
+            Candidate::PngLossless,
+            Candidate::WebpLossless,
+            Candidate::PngPalette(256),
+            Candidate::WebpLossy,
+        ],
     };
     all.into_iter()
         .filter(|c| allowed.contains(&c.format()))
@@ -118,7 +143,12 @@ mod tests {
     use super::*;
     #[test]
     fn alpha_never_routes_to_jpeg() {
-        let all = [OutputImageFormat::Jpeg, OutputImageFormat::Png, OutputImageFormat::Webp, OutputImageFormat::Avif];
+        let all = [
+            OutputImageFormat::Jpeg,
+            OutputImageFormat::Png,
+            OutputImageFormat::Webp,
+            OutputImageFormat::Avif,
+        ];
         for class in [Class::Photo, Class::Graphic] {
             let c = candidates_for(class, true, &all, true, None);
             assert!(!c.contains(&Candidate::Jpeg), "{class:?}: {c:?}");
@@ -129,7 +159,21 @@ mod tests {
     fn filtered_by_allowed_and_source() {
         let c = candidates_for(Class::Photo, false, &[OutputImageFormat::Png], false, None);
         assert!(c.is_empty());
-        let c = candidates_for(Class::Graphic, false, &[OutputImageFormat::Png, OutputImageFormat::Jpeg], false, Some(OutputImageFormat::Png));
-        assert_eq!(c, vec![Candidate::PngLossless, Candidate::PngPalette(256), Candidate::PngPalette(128), Candidate::PngPalette(64)]);
+        let c = candidates_for(
+            Class::Graphic,
+            false,
+            &[OutputImageFormat::Png, OutputImageFormat::Jpeg],
+            false,
+            Some(OutputImageFormat::Png),
+        );
+        assert_eq!(
+            c,
+            vec![
+                Candidate::PngLossless,
+                Candidate::PngPalette(256),
+                Candidate::PngPalette(128),
+                Candidate::PngPalette(64)
+            ]
+        );
     }
 }

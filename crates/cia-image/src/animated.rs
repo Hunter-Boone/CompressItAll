@@ -28,28 +28,61 @@ impl Animation {
     }
     pub fn fps(&self) -> f32 {
         let d = self.duration_ms();
-        if d == 0 { 0.0 } else { self.frames.len() as f32 * 1000.0 / d as f32 }
+        if d == 0 {
+            0.0
+        } else {
+            self.frames.len() as f32 * 1000.0 / d as f32
+        }
     }
 }
 
 /// Decode a GIF (or APNG / animated WebP via `image`) into full coalesced frames.
 pub fn decode_animation(bytes: &[u8]) -> Result<Animation, ImageError> {
     let frames: Vec<image::Frame> = match crate::decode::sniff(bytes) {
-        crate::SourceFormat::Gif => image::codecs::gif::GifDecoder::new(Cursor::new(bytes)).map_err(|e| ImageError::Damaged(e.to_string()))?.into_frames().collect_frames().map_err(|e| ImageError::Damaged(e.to_string()))?,
-        crate::SourceFormat::Png => image::codecs::png::PngDecoder::new(Cursor::new(bytes)).map_err(|e| ImageError::Damaged(e.to_string()))?.apng().map_err(|e| ImageError::Damaged(e.to_string()))?.into_frames().collect_frames().map_err(|e| ImageError::Damaged(e.to_string()))?,
-        crate::SourceFormat::Webp => image::codecs::webp::WebPDecoder::new(Cursor::new(bytes)).map_err(|e| ImageError::Damaged(e.to_string()))?.into_frames().collect_frames().map_err(|e| ImageError::Damaged(e.to_string()))?,
-        other => return Err(ImageError::Unsupported(format!("animated {}", other.token()))),
+        crate::SourceFormat::Gif => image::codecs::gif::GifDecoder::new(Cursor::new(bytes))
+            .map_err(|e| ImageError::Damaged(e.to_string()))?
+            .into_frames()
+            .collect_frames()
+            .map_err(|e| ImageError::Damaged(e.to_string()))?,
+        crate::SourceFormat::Png => image::codecs::png::PngDecoder::new(Cursor::new(bytes))
+            .map_err(|e| ImageError::Damaged(e.to_string()))?
+            .apng()
+            .map_err(|e| ImageError::Damaged(e.to_string()))?
+            .into_frames()
+            .collect_frames()
+            .map_err(|e| ImageError::Damaged(e.to_string()))?,
+        crate::SourceFormat::Webp => image::codecs::webp::WebPDecoder::new(Cursor::new(bytes))
+            .map_err(|e| ImageError::Damaged(e.to_string()))?
+            .into_frames()
+            .collect_frames()
+            .map_err(|e| ImageError::Damaged(e.to_string()))?,
+        other => {
+            return Err(ImageError::Unsupported(format!(
+                "animated {}",
+                other.token()
+            )))
+        }
     };
-    let first = frames.first().ok_or_else(|| ImageError::Damaged("no frames".into()))?;
+    let first = frames
+        .first()
+        .ok_or_else(|| ImageError::Damaged("no frames".into()))?;
     let (width, height) = (first.buffer().width(), first.buffer().height());
     let frames = frames
         .into_iter()
         .map(|f| {
             let (num, den) = f.delay().numer_denom_ms();
-            Frame { rgba: f.into_buffer().into_raw(), delay_ms: num.checked_div(den).map_or(100, |d| d.max(10)) }
+            Frame {
+                rgba: f.into_buffer().into_raw(),
+                delay_ms: num.checked_div(den).map_or(100, |d| d.max(10)),
+            }
         })
         .collect();
-    Ok(Animation { width, height, frames, source_bytes: bytes.len() as u64 })
+    Ok(Animation {
+        width,
+        height,
+        frames,
+        source_bytes: bytes.len() as u64,
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -76,15 +109,24 @@ pub enum AnimOutcome {
 }
 
 /// Re-encode as GIF: per-frame palette (quantette), unchanged pixels become transparent between frames.
-pub fn encode_gif(anim: &Animation, colours: u16, drop_half: bool, scale_long_edge: Option<u32>) -> Result<Vec<u8>, ImageError> {
+pub fn encode_gif(
+    anim: &Animation,
+    colours: u16,
+    drop_half: bool,
+    scale_long_edge: Option<u32>,
+) -> Result<Vec<u8>, ImageError> {
     let (w, h) = match scale_long_edge {
-        Some(le) if le < anim.width.max(anim.height) => crate::resize::dims_for_long_edge(anim.width, anim.height, le),
+        Some(le) if le < anim.width.max(anim.height) => {
+            crate::resize::dims_for_long_edge(anim.width, anim.height, le)
+        }
         _ => (anim.width, anim.height),
     };
     let mut out = Vec::new();
     {
-        let mut enc = gif::Encoder::new(&mut out, w as u16, h as u16, &[]).map_err(|e| ImageError::Encoder(e.to_string()))?;
-        enc.set_repeat(gif::Repeat::Infinite).map_err(|e| ImageError::Encoder(e.to_string()))?;
+        let mut enc = gif::Encoder::new(&mut out, w as u16, h as u16, &[])
+            .map_err(|e| ImageError::Encoder(e.to_string()))?;
+        enc.set_repeat(gif::Repeat::Infinite)
+            .map_err(|e| ImageError::Encoder(e.to_string()))?;
         let mut prev: Option<Vec<u8>> = None;
         let mut carry_delay = 0u32;
         for (i, f) in anim.frames.iter().enumerate() {
@@ -93,7 +135,17 @@ pub fn encode_gif(anim: &Animation, colours: u16, drop_half: bool, scale_long_ed
                 continue;
             }
             let rgba = if (w, h) != (anim.width, anim.height) {
-                let d = crate::decode::DecodedImage { width: anim.width, height: anim.height, rgba: f.rgba.clone(), has_alpha: true, source: crate::SourceFormat::Gif, source_bytes: 0, icc: None, exif: None, was_16_bit: false };
+                let d = crate::decode::DecodedImage {
+                    width: anim.width,
+                    height: anim.height,
+                    rgba: f.rgba.clone(),
+                    has_alpha: true,
+                    source: crate::SourceFormat::Gif,
+                    source_bytes: 0,
+                    icc: None,
+                    exif: None,
+                    was_16_bit: false,
+                };
                 crate::resize::downscale(&d, w, h, false).rgba
             } else {
                 f.rgba.clone()
@@ -107,8 +159,17 @@ pub fn encode_gif(anim: &Animation, colours: u16, drop_half: bool, scale_long_ed
                     }
                 }
             }
-            let rgb: Vec<u8> = flat.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
-            let (pal, idx) = crate::encode::quantise_rgb(&rgb, w, h, colours.clamp(3, 256) - 1, anim.frames.len() > 60)?;
+            let rgb: Vec<u8> = flat
+                .chunks_exact(4)
+                .flat_map(|p| [p[0], p[1], p[2]])
+                .collect();
+            let (pal, idx) = crate::encode::quantise_rgb(
+                &rgb,
+                w,
+                h,
+                colours.clamp(3, 256) - 1,
+                anim.frames.len() > 60,
+            )?;
             let transparent = pal.len() as u8; // extra palette slot for "unchanged"
             let mut palette: Vec<u8> = pal.iter().flat_map(|c| [c[0], c[1], c[2]]).collect();
             palette.extend_from_slice(&[0, 0, 0]);
@@ -122,16 +183,35 @@ pub fn encode_gif(anim: &Animation, colours: u16, drop_half: bool, scale_long_ed
             }
             let delay = ((f.delay_ms + carry_delay) / 10).max(2) as u16;
             carry_delay = 0;
-            let mut frame = gif::Frame { width: w as u16, height: h as u16, delay, palette: Some(palette), buffer: std::borrow::Cow::Owned(pixels), transparent: if prev.is_some() { Some(transparent) } else { None }, dispose: gif::DisposalMethod::Keep, ..Default::default() };
+            let mut frame = gif::Frame {
+                width: w as u16,
+                height: h as u16,
+                delay,
+                palette: Some(palette),
+                buffer: std::borrow::Cow::Owned(pixels),
+                transparent: if prev.is_some() {
+                    Some(transparent)
+                } else {
+                    None
+                },
+                dispose: gif::DisposalMethod::Keep,
+                ..Default::default()
+            };
             frame.make_lzw_pre_encoded();
-            enc.write_lzw_pre_encoded_frame(&frame).map_err(|e| ImageError::Encoder(e.to_string()))?;
+            enc.write_lzw_pre_encoded_frame(&frame)
+                .map_err(|e| ImageError::Encoder(e.to_string()))?;
             prev = Some(flat);
         }
     }
     Ok(out)
 }
 
-pub fn compress_animation(anim: &Animation, opts: &AnimOptions, cancel: CancelFn, progress: ProgressFn) -> Result<AnimOutcome, ImageError> {
+pub fn compress_animation(
+    anim: &Animation,
+    opts: &AnimOptions,
+    cancel: CancelFn,
+    progress: ProgressFn,
+) -> Result<AnimOutcome, ImageError> {
     let budget = opts.budget_bytes;
     let mut smallest = anim.source_bytes;
     let mut long_edge = anim.width.max(anim.height);
@@ -148,18 +228,39 @@ pub fn compress_animation(anim: &Animation, opts: &AnimOptions, cancel: CancelFn
     let mut best: Option<AnimResult> = None;
     let total = steps.len() as f32 + 3.0;
     let mut n = 0f32;
-    let mut attempt = |colours: u16, drop: bool, le: Option<u32>| -> Result<Option<AnimResult>, ImageError> {
-        if cancel() {
-            return Err(ImageError::Cancelled);
-        }
-        n += 1.0;
-        progress(n / total, "Re-encoding animation");
-        let bytes = encode_gif(anim, colours, drop, le)?;
-        let (w, h) = le.map(|l| crate::resize::dims_for_long_edge(anim.width, anim.height, l)).unwrap_or((anim.width, anim.height));
-        let frames = if drop { anim.frames.len().div_ceil(2) } else { anim.frames.len() };
-        let label = if colours >= 256 && !drop && le.is_none() { cia_core::QualityLabel::Great } else if colours >= 128 { cia_core::QualityLabel::Good } else { cia_core::QualityLabel::Okay };
-        Ok(Some(AnimResult { bytes, width: w, height: h, frames, colours, frame_dropped: drop, label }))
-    };
+    let mut attempt =
+        |colours: u16, drop: bool, le: Option<u32>| -> Result<Option<AnimResult>, ImageError> {
+            if cancel() {
+                return Err(ImageError::Cancelled);
+            }
+            n += 1.0;
+            progress(n / total, "Re-encoding animation");
+            let bytes = encode_gif(anim, colours, drop, le)?;
+            let (w, h) = le
+                .map(|l| crate::resize::dims_for_long_edge(anim.width, anim.height, l))
+                .unwrap_or((anim.width, anim.height));
+            let frames = if drop {
+                anim.frames.len().div_ceil(2)
+            } else {
+                anim.frames.len()
+            };
+            let label = if colours >= 256 && !drop && le.is_none() {
+                cia_core::QualityLabel::Great
+            } else if colours >= 128 {
+                cia_core::QualityLabel::Good
+            } else {
+                cia_core::QualityLabel::Okay
+            };
+            Ok(Some(AnimResult {
+                bytes,
+                width: w,
+                height: h,
+                frames,
+                colours,
+                frame_dropped: drop,
+                label,
+            }))
+        };
     for (colours, drop, le) in steps {
         if let Some(r) = attempt(colours, drop, le)? {
             smallest = smallest.min(r.bytes.len() as u64);
@@ -192,5 +293,7 @@ pub fn compress_animation(anim: &Animation, opts: &AnimOptions, cancel: CancelFn
         }
     }
     let _ = best;
-    Ok(AnimOutcome::Refused { smallest_bytes: smallest })
+    Ok(AnimOutcome::Refused {
+        smallest_bytes: smallest,
+    })
 }

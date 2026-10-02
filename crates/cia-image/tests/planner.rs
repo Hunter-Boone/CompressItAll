@@ -27,7 +27,11 @@ fn photo(w: u32, h: u32, seed: u32) -> RgbImage {
         let cx = (rnd() % w) as i32;
         let cy = (rnd() % h) as i32;
         let rad = (w / 16 + rnd() % (w / 10)) as i32;
-        let col = image::Rgb([(rnd() % 256) as u8, (rnd() % 256) as u8, (rnd() % 256) as u8]);
+        let col = image::Rgb([
+            (rnd() % 256) as u8,
+            (rnd() % 256) as u8,
+            (rnd() % 256) as u8,
+        ]);
         for y in (cy - rad).max(0)..(cy + rad).min(h as i32) {
             for x in (cx - rad).max(0)..(cx + rad).min(w as i32) {
                 if (x - cx).pow(2) + (y - cy).pow(2) < rad * rad {
@@ -68,19 +72,40 @@ fn screenshot(w: u32, h: u32) -> RgbImage {
 
 fn jpeg_bytes(img: &RgbImage, q: u8) -> Vec<u8> {
     let mut out = Vec::new();
-    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, q).write_image(img.as_raw(), img.width(), img.height(), image::ExtendedColorType::Rgb8).unwrap();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, q)
+        .write_image(
+            img.as_raw(),
+            img.width(),
+            img.height(),
+            image::ExtendedColorType::Rgb8,
+        )
+        .unwrap();
     out
 }
 
 fn png_bytes_rgba(img: &RgbaImage) -> Vec<u8> {
     let mut out = Vec::new();
-    image::codecs::png::PngEncoder::new(&mut out).write_image(img.as_raw(), img.width(), img.height(), image::ExtendedColorType::Rgba8).unwrap();
+    image::codecs::png::PngEncoder::new(&mut out)
+        .write_image(
+            img.as_raw(),
+            img.width(),
+            img.height(),
+            image::ExtendedColorType::Rgba8,
+        )
+        .unwrap();
     out
 }
 
 fn png_bytes_rgb(img: &RgbImage) -> Vec<u8> {
     let mut out = Vec::new();
-    image::codecs::png::PngEncoder::new(&mut out).write_image(img.as_raw(), img.width(), img.height(), image::ExtendedColorType::Rgb8).unwrap();
+    image::codecs::png::PngEncoder::new(&mut out)
+        .write_image(
+            img.as_raw(),
+            img.width(),
+            img.height(),
+            image::ExtendedColorType::Rgb8,
+        )
+        .unwrap();
     out
 }
 
@@ -98,10 +123,32 @@ fn fit_never_returns_at_or_over_budget_and_converges() {
         let opts = ImageOptions::fit(budget, ALL);
         match compress(&img, &src, &opts, &no_cancel, &no_progress).unwrap() {
             ImageOutcome::Encoded(r) => {
-                assert!((r.bytes.len() as u64) < budget, "budget {budget}: got {}", r.bytes.len());
-                let per_candidate = r.attempts.iter().filter(|a| a.candidate == r.candidate && a.width == r.width).count();
-                assert!(per_candidate <= 8, "budget {budget}: {per_candidate} encodes for {:?}", r.candidate);
-                let v = verify(&r.bytes, &Expect { format: r.format, width: r.width, height: r.height, has_alpha: false, gps_allowed: false, hard_bytes: Some(budget) });
+                assert!(
+                    (r.bytes.len() as u64) < budget,
+                    "budget {budget}: got {}",
+                    r.bytes.len()
+                );
+                let per_candidate = r
+                    .attempts
+                    .iter()
+                    .filter(|a| a.candidate == r.candidate && a.width == r.width)
+                    .count();
+                assert!(
+                    per_candidate <= 8,
+                    "budget {budget}: {per_candidate} encodes for {:?}",
+                    r.candidate
+                );
+                let v = verify(
+                    &r.bytes,
+                    &Expect {
+                        format: r.format,
+                        width: r.width,
+                        height: r.height,
+                        has_alpha: false,
+                        gps_allowed: false,
+                        hard_bytes: Some(budget),
+                    },
+                );
                 assert!(v.passed(), "{:?}", v.failures);
             }
             other => panic!("budget {budget}: {other:?}"),
@@ -113,15 +160,34 @@ fn fit_never_returns_at_or_over_budget_and_converges() {
 fn downscales_only_when_the_floor_does_not_fit_and_never_upscales() {
     let src = jpeg_bytes(&photo(1600, 1200, 2), 95);
     let img = decode(&src).unwrap();
-    let r = match compress(&img, &src, &ImageOptions::fit(25_000, ALL), &no_cancel, &no_progress).unwrap() {
+    let r = match compress(
+        &img,
+        &src,
+        &ImageOptions::fit(25_000, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         ImageOutcome::Encoded(r) => r,
         other => panic!("{other:?}"),
     };
     assert!(r.downscaled);
     assert!(r.width < 1600 && r.height < 1200);
-    assert!((r.width as f64 / r.height as f64 - 4.0 / 3.0).abs() < 0.02, "aspect kept");
+    assert!(
+        (r.width as f64 / r.height as f64 - 4.0 / 3.0).abs() < 0.02,
+        "aspect kept"
+    );
     assert!(r.bytes.len() < 25_000);
-    let r2 = match compress(&img, &src, &ImageOptions::fit(10_000_000, ALL), &no_cancel, &no_progress).unwrap() {
+    let r2 = match compress(
+        &img,
+        &src,
+        &ImageOptions::fit(10_000_000, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         ImageOutcome::KeptOriginal { .. } => return,
         ImageOutcome::Encoded(r) => r,
         other => panic!("{other:?}"),
@@ -133,7 +199,15 @@ fn downscales_only_when_the_floor_does_not_fit_and_never_upscales() {
 fn refuses_below_480px_long_edge() {
     let src = jpeg_bytes(&photo(1600, 1200, 3), 95);
     let img = decode(&src).unwrap();
-    match compress(&img, &src, &ImageOptions::fit(1_500, ALL), &no_cancel, &no_progress).unwrap() {
+    match compress(
+        &img,
+        &src,
+        &ImageOptions::fit(1_500, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         ImageOutcome::Refused { smallest_bytes, .. } => assert!(smallest_bytes > 1_500),
         other => panic!("{other:?}"),
     }
@@ -145,19 +219,41 @@ fn alpha_is_never_routed_to_jpeg() {
     let p = photo(800, 600, 4);
     for (x, y, px) in rgba.enumerate_pixels_mut() {
         let c = p.get_pixel(x, y);
-        let a = if (x as i32 - 400).pow(2) + (y as i32 - 300).pow(2) < 250 * 250 { 255 } else { 0 };
+        let a = if (x as i32 - 400).pow(2) + (y as i32 - 300).pow(2) < 250 * 250 {
+            255
+        } else {
+            0
+        };
         *px = image::Rgba([c[0], c[1], c[2], a]);
     }
     let src = png_bytes_rgba(&rgba);
     let img = decode(&src).unwrap();
     assert!(img.has_alpha);
-    let r = match compress(&img, &src, &ImageOptions::fit(40_000, ALL), &no_cancel, &no_progress).unwrap() {
+    let r = match compress(
+        &img,
+        &src,
+        &ImageOptions::fit(40_000, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         ImageOutcome::Encoded(r) => r,
         other => panic!("{other:?}"),
     };
     assert_ne!(r.format, OutputImageFormat::Jpeg);
     assert!(r.attempts.iter().all(|a| a.candidate != Candidate::Jpeg));
-    let v = verify(&r.bytes, &Expect { format: r.format, width: r.width, height: r.height, has_alpha: true, gps_allowed: false, hard_bytes: Some(40_000) });
+    let v = verify(
+        &r.bytes,
+        &Expect {
+            format: r.format,
+            width: r.width,
+            height: r.height,
+            has_alpha: true,
+            gps_allowed: false,
+            hard_bytes: Some(40_000),
+        },
+    );
     assert!(v.passed(), "{:?}", v.failures);
 }
 
@@ -187,7 +283,15 @@ fn screenshot_is_graphic_and_prefers_lossless_png() {
     let img = decode(&src).unwrap();
     let cls = classify(&img);
     assert_eq!(cls.class, Class::Graphic, "{cls:?}");
-    let r = match compress(&img, &src, &ImageOptions::fit(5_000_000, ALL), &no_cancel, &no_progress).unwrap() {
+    let r = match compress(
+        &img,
+        &src,
+        &ImageOptions::fit(5_000_000, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         ImageOutcome::Encoded(r) => r,
         ImageOutcome::KeptOriginal { .. } => return, // already small and oxipng saved < 5 percent
         other => panic!("{other:?}"),
@@ -223,9 +327,23 @@ fn orientation_tags_produce_upright_pixels_and_no_tag_in_output() {
             2 => dyn_img.fliph(),
             3 => dyn_img.rotate180(),
             4 => dyn_img.flipv(),
-            5 => dyn_img.rotate90().fliph().rotate180().fliph().rotate270().fliph().rotate90(), // transpose
+            5 => dyn_img
+                .rotate90()
+                .fliph()
+                .rotate180()
+                .fliph()
+                .rotate270()
+                .fliph()
+                .rotate90(), // transpose
             6 => dyn_img.rotate270(),
-            7 => dyn_img.rotate90().fliph().rotate180().fliph().rotate270().fliph().rotate270(),
+            7 => dyn_img
+                .rotate90()
+                .fliph()
+                .rotate180()
+                .fliph()
+                .rotate270()
+                .fliph()
+                .rotate270(),
             8 => dyn_img.rotate90(),
             _ => unreachable!(),
         };
@@ -233,7 +351,8 @@ fn orientation_tags_produce_upright_pixels_and_no_tag_in_output() {
         // Write the orientation tag with little_exif.
         let mut meta = little_exif::metadata::Metadata::new();
         meta.set_tag(little_exif::exif_tag::ExifTag::Orientation(vec![o as u16]));
-        meta.write_to_vec(&mut bytes, little_exif::filetype::FileExtension::JPEG).unwrap();
+        meta.write_to_vec(&mut bytes, little_exif::filetype::FileExtension::JPEG)
+            .unwrap();
         let info = inspect(&bytes).unwrap();
         assert_eq!(info.orientation, o, "orientation written");
         let img = decode(&bytes).unwrap();
@@ -242,13 +361,35 @@ fn orientation_tags_produce_upright_pixels_and_no_tag_in_output() {
         if o == 5 || o == 7 {
             continue; // transposes are built from compound flips above; dims are the real check
         }
-        assert!(p[0] > 200 && p[1] < 80 && p[2] < 80, "orientation {o}: pixel {:?}", p);
-        let r = match compress(&img, &bytes, &ImageOptions::fit(50_000, ALL), &no_cancel, &no_progress).unwrap() {
+        assert!(
+            p[0] > 200 && p[1] < 80 && p[2] < 80,
+            "orientation {o}: pixel {:?}",
+            p
+        );
+        let r = match compress(
+            &img,
+            &bytes,
+            &ImageOptions::fit(50_000, ALL),
+            &no_cancel,
+            &no_progress,
+        )
+        .unwrap()
+        {
             ImageOutcome::Encoded(r) => r,
             ImageOutcome::KeptOriginal { .. } => continue,
             other => panic!("{other:?}"),
         };
-        let v = verify(&r.bytes, &Expect { format: r.format, width: r.width, height: r.height, has_alpha: false, gps_allowed: false, hard_bytes: Some(50_000) });
+        let v = verify(
+            &r.bytes,
+            &Expect {
+                format: r.format,
+                width: r.width,
+                height: r.height,
+                has_alpha: false,
+                gps_allowed: false,
+                hard_bytes: Some(50_000),
+            },
+        );
         assert!(v.passed(), "orientation {o}: {:?}", v.failures);
     }
 }
@@ -258,7 +399,14 @@ fn smaller_mode_keeps_originals_that_do_not_shrink_five_percent() {
     // A JPEG already saved at q60 does not get 5 percent smaller at the visually lossless target.
     let src = jpeg_bytes(&photo(640, 480, 8), 60);
     let img = decode(&src).unwrap();
-    let out = compress(&img, &src, &ImageOptions::smaller(SmallerLevel::KeepQuality, ALL), &no_cancel, &no_progress).unwrap();
+    let out = compress(
+        &img,
+        &src,
+        &ImageOptions::smaller(SmallerLevel::KeepQuality, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap();
     assert!(matches!(out, ImageOutcome::KeptOriginal { .. }), "{out:?}");
 }
 
@@ -266,10 +414,22 @@ fn smaller_mode_keeps_originals_that_do_not_shrink_five_percent() {
 fn smaller_mode_shrinks_a_q95_jpeg() {
     let src = jpeg_bytes(&photo(1000, 750, 9), 97);
     let img = decode(&src).unwrap();
-    match compress(&img, &src, &ImageOptions::smaller(SmallerLevel::KeepQuality, ALL), &no_cancel, &no_progress).unwrap() {
+    match compress(
+        &img,
+        &src,
+        &ImageOptions::smaller(SmallerLevel::KeepQuality, ALL),
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         ImageOutcome::Encoded(r) => {
             assert!((r.bytes.len() as u64) * 100 <= src.len() as u64 * 95);
-            assert_eq!(r.format, OutputImageFormat::Jpeg, "format change off in Smaller mode");
+            assert_eq!(
+                r.format,
+                OutputImageFormat::Jpeg,
+                "format change off in Smaller mode"
+            );
             assert!(r.score.unwrap_or(100.0) >= 70.0, "score {:?}", r.score);
         }
         other => panic!("{other:?}"),
@@ -280,13 +440,33 @@ fn smaller_mode_shrinks_a_q95_jpeg() {
 fn already_fitting_jpeg_is_kept() {
     let src = jpeg_bytes(&photo(640, 480, 10), 85);
     let img = decode(&src).unwrap();
-    assert!(matches!(compress(&img, &src, &ImageOptions::fit(10_000_000, ALL), &no_cancel, &no_progress).unwrap(), ImageOutcome::KeptOriginal { .. }));
+    assert!(matches!(
+        compress(
+            &img,
+            &src,
+            &ImageOptions::fit(10_000_000, ALL),
+            &no_cancel,
+            &no_progress
+        )
+        .unwrap(),
+        ImageOutcome::KeptOriginal { .. }
+    ));
 }
 
 #[test]
 fn verify_catches_wrong_dimensions_and_over_limit() {
     let src = jpeg_bytes(&photo(300, 200, 11), 80);
-    let v = verify(&src, &Expect { format: OutputImageFormat::Jpeg, width: 301, height: 200, has_alpha: false, gps_allowed: false, hard_bytes: Some(10) });
+    let v = verify(
+        &src,
+        &Expect {
+            format: OutputImageFormat::Jpeg,
+            width: 301,
+            height: 200,
+            has_alpha: false,
+            gps_allowed: false,
+            hard_bytes: Some(10),
+        },
+    );
     assert!(!v.passed());
     assert!(!v.size_ok);
     assert!(v.failures.iter().any(|f| f.contains("dimensions")));
@@ -297,7 +477,10 @@ fn damaged_input_is_an_error_not_a_panic() {
     let mut bad = jpeg_bytes(&photo(300, 200, 12), 80);
     bad.truncate(400);
     assert!(matches!(decode(&bad), Err(ImageError::Damaged(_))));
-    assert!(matches!(decode(b"not an image at all, really not"), Err(ImageError::Damaged(_)) | Err(ImageError::Unsupported(_))));
+    assert!(matches!(
+        decode(b"not an image at all, really not"),
+        Err(ImageError::Damaged(_)) | Err(ImageError::Unsupported(_))
+    ));
 }
 
 #[test]
@@ -320,20 +503,41 @@ fn animated_gif_fits_a_budget() {
     let mut out = Vec::new();
     {
         let mut enc = image::codecs::gif::GifEncoder::new(&mut out);
-        enc.set_repeat(image::codecs::gif::Repeat::Infinite).unwrap();
+        enc.set_repeat(image::codecs::gif::Repeat::Infinite)
+            .unwrap();
         for f in frames {
-            enc.encode_frame(image::Frame::from_parts(f, 0, 0, image::Delay::from_numer_denom_ms(40, 1))).unwrap();
+            enc.encode_frame(image::Frame::from_parts(
+                f,
+                0,
+                0,
+                image::Delay::from_numer_denom_ms(40, 1),
+            ))
+            .unwrap();
         }
     }
     let anim = animated::decode_animation(&out).unwrap();
     assert_eq!(anim.frames.len(), 12);
     let budget = (out.len() / 3) as u64;
-    match animated::compress_animation(&anim, &animated::AnimOptions { budget_bytes: Some(budget) }, &no_cancel, &no_progress).unwrap() {
+    match animated::compress_animation(
+        &anim,
+        &animated::AnimOptions {
+            budget_bytes: Some(budget),
+        },
+        &no_cancel,
+        &no_progress,
+    )
+    .unwrap()
+    {
         animated::AnimOutcome::Encoded(r) => {
             assert!((r.bytes.len() as u64) < budget);
             let back = animated::decode_animation(&r.bytes).unwrap();
             assert!(back.frames.len() >= 6);
-            assert!((back.duration_ms() as i64 - anim.duration_ms() as i64).abs() <= 60, "{} vs {}", back.duration_ms(), anim.duration_ms());
+            assert!(
+                (back.duration_ms() as i64 - anim.duration_ms() as i64).abs() <= 60,
+                "{} vs {}",
+                back.duration_ms(),
+                anim.duration_ms()
+            );
         }
         other => panic!("{other:?}"),
     }

@@ -23,7 +23,15 @@ impl Engine {
     pub fn inspect_one(&self, spec: &InputSpec) -> InputItem {
         let id = cia_core::new_id();
         let bytes = self.reader.len(&spec.source).unwrap_or(0);
-        let mut item = InputItem { id, source: spec.source.clone(), rel_path: spec.rel_path.clone(), bytes, kind: Kind::Other, detail: KindDetail::default(), folder: spec.folder.clone() };
+        let mut item = InputItem {
+            id,
+            source: spec.source.clone(),
+            rel_path: spec.rel_path.clone(),
+            bytes,
+            kind: Kind::Other,
+            detail: KindDetail::default(),
+            folder: spec.folder.clone(),
+        };
         let head = match self.reader.read_head(&spec.source, HEAD) {
             Ok(h) => h,
             Err(_) => {
@@ -31,7 +39,13 @@ impl Engine {
                 return item;
             }
         };
-        let det = detect(&head, spec.rel_path.rsplit(['/', '\\']).next().unwrap_or(&spec.rel_path));
+        let det = detect(
+            &head,
+            spec.rel_path
+                .rsplit(['/', '\\'])
+                .next()
+                .unwrap_or(&spec.rel_path),
+        );
         item.kind = det.kind;
         item.detail.format = det.format;
         match item.kind {
@@ -45,7 +59,9 @@ impl Engine {
                     }
                     Err(cia_image::ImageError::Unsupported(_)) => {
                         // AVIF/HEIC need a decoder we do not compile in.
-                        if !self.caps.heic_input && item.detail.format == "heic" || !self.caps.avif_input && item.detail.format == "avif" {
+                        if !self.caps.heic_input && item.detail.format == "heic"
+                            || !self.caps.avif_input && item.detail.format == "avif"
+                        {
                             item.detail.encrypted = None;
                         }
                     }
@@ -79,7 +95,14 @@ impl Engine {
                 if let Ok(all) = self.reader.read(&spec.source) {
                     if let Ok(info) = cia_audio::probe(&all) {
                         item.detail.duration_ms = Some(info.duration_ms);
-                        item.detail.audio_streams = vec![AudioStreamInfo { index: 0, codec: info.codec.clone(), channels: info.channels as u32, sample_rate: info.sample_rate, bitrate_bps: info.bitrate_bps, title: None }];
+                        item.detail.audio_streams = vec![AudioStreamInfo {
+                            index: 0,
+                            codec: info.codec.clone(),
+                            channels: info.channels as u32,
+                            sample_rate: info.sample_rate,
+                            bitrate_bps: info.bitrate_bps,
+                            title: None,
+                        }];
                         if info.needs_ffmpeg {
                             if let Some(v) = &self.video {
                                 if let Ok(p) = v.probe(&spec.source) {
@@ -101,7 +124,18 @@ impl Engine {
                             item.detail.video_codec = Some(p.video_codec.clone());
                             item.detail.is_hdr = Some(p.is_hdr);
                             item.detail.rotation_degrees = Some(p.rotation_degrees);
-                            item.detail.audio_streams = p.audio.iter().map(|a| AudioStreamInfo { index: a.index, codec: a.codec.clone(), channels: a.channels, sample_rate: a.sample_rate, bitrate_bps: a.bitrate_bps, title: a.title.clone() }).collect();
+                            item.detail.audio_streams = p
+                                .audio
+                                .iter()
+                                .map(|a| AudioStreamInfo {
+                                    index: a.index,
+                                    codec: a.codec.clone(),
+                                    channels: a.channels,
+                                    sample_rate: a.sample_rate,
+                                    bitrate_bps: a.bitrate_bps,
+                                    title: a.title.clone(),
+                                })
+                                .collect();
                         }
                         Err(_) => item.detail.format = "corrupt".into(),
                     }
@@ -111,7 +145,8 @@ impl Engine {
                 if item.detail.format != "rar" {
                     if let Ok(all) = self.reader.read(&spec.source) {
                         if let Ok(a) = cia_archive::open(&all) {
-                            item.detail.entry_count = Some(a.entries().iter().filter(|e| !e.is_dir).count() as u32);
+                            item.detail.entry_count =
+                                Some(a.entries().iter().filter(|e| !e.is_dir).count() as u32);
                             item.detail.encrypted = Some(a.entries().iter().any(|e| e.encrypted));
                         } else {
                             item.detail.format = "corrupt".into();
@@ -138,7 +173,9 @@ impl Engine {
         match item.kind {
             Kind::Video => true,
             Kind::Audio => matches!(item.detail.format.as_str(), "m4a" | "aac" | "wma" | "alac"),
-            Kind::Image => matches!(item.detail.format.as_str(), "heic" | "avif") && !self.caps.heic_input,
+            Kind::Image => {
+                matches!(item.detail.format.as_str(), "heic" | "avif") && !self.caps.heic_input
+            }
             _ => false,
         }
     }

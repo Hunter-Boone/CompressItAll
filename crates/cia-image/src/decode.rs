@@ -74,11 +74,18 @@ pub fn sniff(bytes: &[u8]) -> SourceFormat {
         if brand == b"avif" || brand == b"avis" {
             return SourceFormat::Avif;
         }
-        if brand == b"heic" || brand == b"heix" || brand == b"hevc" || brand == b"mif1" || brand == b"heif" {
+        if brand == b"heic"
+            || brand == b"heix"
+            || brand == b"hevc"
+            || brand == b"mif1"
+            || brand == b"heif"
+        {
             return SourceFormat::Heic;
         }
     }
-    if b.starts_with(&[0xFF, 0x0A]) || b.starts_with(&[0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20]) {
+    if b.starts_with(&[0xFF, 0x0A])
+        || b.starts_with(&[0x00, 0x00, 0x00, 0x0C, 0x4A, 0x58, 0x4C, 0x20])
+    {
         return SourceFormat::Jxl;
     }
     if b.starts_with(b"qoif") {
@@ -112,27 +119,69 @@ pub fn inspect(bytes: &[u8]) -> Result<ImageInfo, ImageError> {
         return Err(ImageError::Unsupported(format.token().into()));
     }
     if format == SourceFormat::Jxl {
-        let img = jxl_oxide::JxlImage::builder().read(Cursor::new(bytes)).map_err(|e| ImageError::Damaged(e.to_string()))?;
-        return Ok(ImageInfo { format, width: img.width(), height: img.height(), has_alpha: img.image_header().metadata.alpha().is_some(), frames: 1, orientation: 1, bits: 8 });
+        let img = jxl_oxide::JxlImage::builder()
+            .read(Cursor::new(bytes))
+            .map_err(|e| ImageError::Damaged(e.to_string()))?;
+        return Ok(ImageInfo {
+            format,
+            width: img.width(),
+            height: img.height(),
+            has_alpha: img.image_header().metadata.alpha().is_some(),
+            frames: 1,
+            orientation: 1,
+            bits: 8,
+        });
     }
-    let frames = if format == SourceFormat::Gif { count_gif_frames(bytes) } else if (format == SourceFormat::Png && is_apng(bytes)) || (format == SourceFormat::Webp && is_animated_webp(bytes)) { 2 } else { 1 };
-    let reader = ImageReader::new(Cursor::new(bytes)).with_guessed_format().map_err(|e| ImageError::Damaged(e.to_string()))?;
-    let (w, h) = reader.into_dimensions().map_err(|e| ImageError::Damaged(e.to_string()))?;
-    let orientation = metadata::read_exif(bytes).map(|e| e.orientation).unwrap_or(1);
-    let (w, h) = if (5..=8).contains(&orientation) { (h, w) } else { (w, h) };
+    let frames = if format == SourceFormat::Gif {
+        count_gif_frames(bytes)
+    } else if (format == SourceFormat::Png && is_apng(bytes))
+        || (format == SourceFormat::Webp && is_animated_webp(bytes))
+    {
+        2
+    } else {
+        1
+    };
+    let reader = ImageReader::new(Cursor::new(bytes))
+        .with_guessed_format()
+        .map_err(|e| ImageError::Damaged(e.to_string()))?;
+    let (w, h) = reader
+        .into_dimensions()
+        .map_err(|e| ImageError::Damaged(e.to_string()))?;
+    let orientation = metadata::read_exif(bytes)
+        .map(|e| e.orientation)
+        .unwrap_or(1);
+    let (w, h) = if (5..=8).contains(&orientation) {
+        (h, w)
+    } else {
+        (w, h)
+    };
     let has_alpha = match format {
         SourceFormat::Jpeg | SourceFormat::Bmp | SourceFormat::Pnm => false,
         SourceFormat::Png => png_has_alpha(bytes),
         _ => true, // decided for real at decode time
     };
-    Ok(ImageInfo { format, width: w, height: h, has_alpha, frames, orientation, bits: if format == SourceFormat::Png && png_bit_depth(bytes) == 16 { 16 } else { 8 } })
+    Ok(ImageInfo {
+        format,
+        width: w,
+        height: h,
+        has_alpha,
+        frames,
+        orientation,
+        bits: if format == SourceFormat::Png && png_bit_depth(bytes) == 16 {
+            16
+        } else {
+            8
+        },
+    })
 }
 
 fn count_gif_frames(bytes: &[u8]) -> u32 {
     let mut opts = gif::DecodeOptions::new();
     opts.set_color_output(gif::ColorOutput::Indexed);
     opts.allow_unknown_blocks(true);
-    let Ok(mut d) = opts.read_info(Cursor::new(bytes)) else { return 1 };
+    let Ok(mut d) = opts.read_info(Cursor::new(bytes)) else {
+        return 1;
+    };
     let mut n = 0;
     while let Ok(Some(_)) = d.next_frame_info() {
         n += 1;
@@ -160,7 +209,11 @@ fn has_trns(bytes: &[u8]) -> bool {
 }
 
 fn png_bit_depth(bytes: &[u8]) -> u8 {
-    if bytes.len() > 24 { bytes[24] } else { 8 }
+    if bytes.len() > 24 {
+        bytes[24]
+    } else {
+        8
+    }
 }
 
 /// A decoded, upright, 8-bit RGBA image plus what we need to carry forward.
@@ -187,7 +240,10 @@ impl DecodedImage {
         self.width.max(self.height)
     }
     pub fn rgb(&self) -> Vec<u8> {
-        self.rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect()
+        self.rgba
+            .chunks_exact(4)
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect()
     }
     /// Composite onto white (for "Flatten transparency").
     pub fn flattened(&self) -> DecodedImage {
@@ -204,11 +260,29 @@ impl DecodedImage {
     }
     pub fn from_dynamic(img: DynamicImage, source: SourceFormat, source_bytes: u64) -> Self {
         let (width, height) = img.dimensions();
-        let was_16_bit = matches!(img, DynamicImage::ImageRgb16(_) | DynamicImage::ImageRgba16(_) | DynamicImage::ImageLuma16(_) | DynamicImage::ImageLumaA16(_) | DynamicImage::ImageRgb32F(_) | DynamicImage::ImageRgba32F(_));
+        let was_16_bit = matches!(
+            img,
+            DynamicImage::ImageRgb16(_)
+                | DynamicImage::ImageRgba16(_)
+                | DynamicImage::ImageLuma16(_)
+                | DynamicImage::ImageLumaA16(_)
+                | DynamicImage::ImageRgb32F(_)
+                | DynamicImage::ImageRgba32F(_)
+        );
         let has_alpha_channel = img.color().has_alpha();
         let rgba = img.into_rgba8().into_raw();
         let has_alpha = has_alpha_channel && rgba.chunks_exact(4).any(|p| p[3] < 255);
-        DecodedImage { width, height, rgba, has_alpha, source, source_bytes, icc: None, exif: None, was_16_bit }
+        DecodedImage {
+            width,
+            height,
+            rgba,
+            has_alpha,
+            source,
+            source_bytes,
+            icc: None,
+            exif: None,
+            was_16_bit,
+        }
     }
 }
 
@@ -221,22 +295,52 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedImage, ImageError> {
     let exif = metadata::read_exif(bytes);
     let dynamic = match source {
         SourceFormat::Jxl => {
-            let img = jxl_oxide::JxlImage::builder().read(Cursor::new(bytes)).map_err(|e| ImageError::Damaged(e.to_string()))?;
-            let render = img.render_frame(0).map_err(|e| ImageError::Damaged(e.to_string()))?;
+            let img = jxl_oxide::JxlImage::builder()
+                .read(Cursor::new(bytes))
+                .map_err(|e| ImageError::Damaged(e.to_string()))?;
+            let render = img
+                .render_frame(0)
+                .map_err(|e| ImageError::Damaged(e.to_string()))?;
             let fb = render.image_all_channels();
             let (w, h, ch) = (fb.width() as u32, fb.height() as u32, fb.channels());
-            let data: Vec<u8> = fb.buf().iter().map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8).collect();
+            let data: Vec<u8> = fb
+                .buf()
+                .iter()
+                .map(|v| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8)
+                .collect();
             match ch {
-                1 => DynamicImage::ImageLuma8(image::GrayImage::from_raw(w, h, data).ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?),
-                2 => DynamicImage::ImageLumaA8(image::GrayAlphaImage::from_raw(w, h, data).ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?),
-                3 => DynamicImage::ImageRgb8(image::RgbImage::from_raw(w, h, data).ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?),
-                _ => DynamicImage::ImageRgba8(image::RgbaImage::from_raw(w, h, data.chunks(ch).flat_map(|c| [c[0], c[1], c[2], c[3]]).collect()).ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?),
+                1 => DynamicImage::ImageLuma8(
+                    image::GrayImage::from_raw(w, h, data)
+                        .ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?,
+                ),
+                2 => DynamicImage::ImageLumaA8(
+                    image::GrayAlphaImage::from_raw(w, h, data)
+                        .ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?,
+                ),
+                3 => DynamicImage::ImageRgb8(
+                    image::RgbImage::from_raw(w, h, data)
+                        .ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?,
+                ),
+                _ => DynamicImage::ImageRgba8(
+                    image::RgbaImage::from_raw(
+                        w,
+                        h,
+                        data.chunks(ch)
+                            .flat_map(|c| [c[0], c[1], c[2], c[3]])
+                            .collect(),
+                    )
+                    .ok_or_else(|| ImageError::Damaged("jxl buffer".into()))?,
+                ),
             }
         }
         _ => {
-            let mut reader = ImageReader::new(Cursor::new(bytes)).with_guessed_format().map_err(|e| ImageError::Damaged(e.to_string()))?;
+            let mut reader = ImageReader::new(Cursor::new(bytes))
+                .with_guessed_format()
+                .map_err(|e| ImageError::Damaged(e.to_string()))?;
             reader.no_limits();
-            reader.decode().map_err(|e| ImageError::Damaged(e.to_string()))?
+            reader
+                .decode()
+                .map_err(|e| ImageError::Damaged(e.to_string()))?
         }
     };
     let icc = read_icc(bytes, source);
@@ -253,7 +357,8 @@ pub fn decode(bytes: &[u8]) -> Result<DecodedImage, ImageError> {
 
 /// EXIF orientation 2..=8 to pixels; the output never carries a tag other than 1.
 pub fn apply_orientation(img: &mut DecodedImage, orientation: u32) {
-    let buf = image::RgbaImage::from_raw(img.width, img.height, std::mem::take(&mut img.rgba)).expect("buffer size");
+    let buf = image::RgbaImage::from_raw(img.width, img.height, std::mem::take(&mut img.rgba))
+        .expect("buffer size");
     let out = match orientation {
         2 => image::imageops::flip_horizontal(&buf),
         3 => image::imageops::rotate180(&buf),

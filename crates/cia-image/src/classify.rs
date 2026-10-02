@@ -39,7 +39,8 @@ pub fn classify(img: &DecodedImage) -> Classification {
             for y in by..by + 8 {
                 for x in bx..bx + 8 {
                     let i = (y * w + x) * 3;
-                    let l = ((px[i] as u32 * 299 + px[i + 1] as u32 * 587 + px[i + 2] as u32 * 114) / 1000) as u8;
+                    let l = ((px[i] as u32 * 299 + px[i + 1] as u32 * 587 + px[i + 2] as u32 * 114)
+                        / 1000) as u8;
                     lo = lo.min(l);
                     hi = hi.max(l);
                 }
@@ -52,8 +53,21 @@ pub fn classify(img: &DecodedImage) -> Classification {
         }
         by += 8;
     }
-    let flat_ratio = if blocks == 0 { 0.0 } else { flat as f32 / blocks as f32 };
+    let flat_ratio = if blocks == 0 {
+        0.0
+    } else {
+        flat as f32 / blocks as f32
+    };
     let unique_colours = colours.len() as u32;
-    let class = if unique_colours <= 4096 || flat_ratio >= 0.5 { Class::Graphic } else { Class::Photo };
-    Classification { class, has_alpha: img.has_alpha, unique_colours, flat_ratio }
+    let class = if unique_colours <= 4096 || flat_ratio >= 0.5 {
+        Class::Graphic
+    } else {
+        Class::Photo
+    };
+    Classification {
+        class,
+        has_alpha: img.has_alpha,
+        unique_colours,
+        flat_ratio,
+    }
 }
