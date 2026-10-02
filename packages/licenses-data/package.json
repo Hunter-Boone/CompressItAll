@@ -1,0 +1,14 @@
+{
+  "name": "@cia/licenses-data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generated third-party licence inventory for the Licenses page (DESIGN.md 4.11). Regenerate with `cargo xtask licenses`; never edit licenses.json by hand.",
+  "main": "licenses.json",
+  "exports": {
+    ".": "./licenses.json"
+  },
+  "scripts": {
+    "test": "vitest run"
+  }
+}

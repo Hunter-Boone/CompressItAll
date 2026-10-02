@@ -1,0 +1,162 @@
+{
+  "$comment": "Hand-written licence data for things neither cargo-about nor license-checker sees (DESIGN.md 4.11, 10.3). `text_file` names a file in tools/licenses/texts/. `notes` keys are package names; a trailing * matches a prefix. `fonts` renames npm font packages into the Fonts group. `exclude` drops npm packages that are not in the shipped bundle (patterns as for notes). `overrides` replaces fields of a generated entry (same key rules); `text_file` there also names a cached text.",
+  "groups": {
+    "Downloaded with your permission": [
+      {
+        "name": "FFmpeg",
+        "license": "LGPL-3.0-or-later",
+        "copyright": "Copyright (c) the FFmpeg developers",
+        "url": "https://github.com/Hunter-Boone/Smidge-Libraries",
+        "note": "Runs as a separate process and is downloaded only after you say yes; it is never bundled with the app. Built from unmodified FFmpeg sources with --enable-version3 and without --enable-gpl or --enable-nonfree. The exact configure flags (ffmpeg/BUILD_CONFIG.txt) and the corresponding source tarball are published with every Smidge-Libraries release. See https://ffmpeg.org/legal.html.",
+        "text_file": "LGPL-3.0-only.txt"
+      },
+      {
+        "name": "libvpx",
+        "license": "BSD-3-Clause",
+        "copyright": "Copyright (c) 2010, The WebM Project authors. All rights reserved.",
+        "url": "https://www.webmproject.org/",
+        "note": "VP8/VP9 inside the FFmpeg process. Patent grant: see Patent licences.",
+        "text_file": "BSD-3-Clause.txt"
+      },
+      {
+        "name": "libaom",
+        "license": "BSD-2-Clause",
+        "copyright": "Copyright (c) 2016, Alliance for Open Media. All rights reserved.",
+        "url": "https://aomedia.googlesource.com/aom/",
+        "note": "AV1 inside the FFmpeg process. Patent grant: see Patent licences.",
+        "text_file": "BSD-2-Clause.txt"
+      },
+      {
+        "name": "dav1d",
+        "license": "BSD-2-Clause",
+        "copyright": "Copyright (c) VideoLAN and dav1d authors. All rights reserved.",
+        "url": "https://code.videolan.org/videolan/dav1d",
+        "note": "AV1 and AVIF decode inside the FFmpeg process.",
+        "text_file": "BSD-2-Clause.txt"
+      },
+      {
+        "name": "libopus",
+        "license": "BSD-3-Clause",
+        "copyright": "Copyright 2001-2011 Xiph.Org, Skype Limited, Octasic, Jean-Marc Valin, Timothy B. Terriberry, CSIRO, Gregory Maxwell, Mark Borgerding, Erik de Castro Lopo",
+        "url": "https://opus-codec.org/",
+        "note": "Opus inside the FFmpeg process. Patent grants: see Patent licences.",
+        "text_file": "BSD-3-Clause.txt"
+      },
+      {
+        "name": "libvorbis",
+        "license": "BSD-3-Clause",
+        "copyright": "Copyright (c) 2002-2020 Xiph.org Foundation",
+        "url": "https://xiph.org/vorbis/",
+        "note": "Vorbis inside the FFmpeg process.",
+        "text_file": "BSD-3-Clause.txt"
+      },
+      {
+        "name": "LAME",
+        "license": "LGPL-2.0-or-later",
+        "copyright": "Copyright (c) The LAME Project",
+        "url": "https://lame.sourceforge.io/",
+        "note": "MP3 encoding inside the separately downloaded FFmpeg process only; never linked into the app.",
+        "text_file": "LGPL-2.0-only.txt"
+      },
+      {
+        "name": "libwebp",
+        "license": "BSD-3-Clause",
+        "copyright": "Copyright (c) 2010, Google Inc. All rights reserved.",
+        "url": "https://developers.google.com/speed/webp",
+        "note": "WebP inside the FFmpeg process. Patent grant: see Patent licences.",
+        "text_file": "BSD-3-Clause.txt"
+      },
+      {
+        "name": "zimg",
+        "license": "WTFPL",
+        "url": "https://github.com/sekrit-twc/zimg",
+        "note": "HDR tone-mapping (zscale) inside the FFmpeg process.",
+        "text_file": "WTFPL.txt"
+      },
+      {
+        "name": "SVT-AV1",
+        "license": "BSD-3-Clause-Clear",
+        "copyright": "Copyright (c) 2019, Alliance for Open Media. All rights reserved.",
+        "url": "https://gitlab.com/AOMediaCodec/SVT-AV1",
+        "note": "AV1 encoding inside the FFmpeg process. Patent grant: see Patent licences.",
+        "text_file": "BSD-3-Clause-Clear.txt"
+      },
+      {
+        "name": "nv-codec-headers",
+        "license": "MIT",
+        "copyright": "Copyright (c) 2016 NVIDIA Corporation",
+        "url": "https://github.com/FFmpeg/nv-codec-headers",
+        "note": "NVENC/NVDEC headers used to build FFmpeg.",
+        "text_file": "MIT.txt"
+      },
+      {
+        "name": "AMF headers",
+        "license": "MIT",
+        "copyright": "Copyright (c) Advanced Micro Devices, Inc.",
+        "url": "https://github.com/GPUOpen-LibrariesAndSDKs/AMF",
+        "note": "AMD encoder headers used to build FFmpeg.",
+        "text_file": "MIT.txt"
+      },
+      {
+        "name": "libvpl",
+        "license": "MIT",
+        "copyright": "Copyright (C) Intel Corporation",
+        "url": "https://github.com/intel/libvpl",
+        "note": "Intel Quick Sync dispatcher inside the FFmpeg process.",
+        "text_file": "MIT.txt"
+      },
+      {
+        "name": "libva",
+        "license": "MIT",
+        "copyright": "Copyright (c) Intel Corporation",
+        "url": "https://github.com/intel/libva",
+        "note": "VA-API inside the FFmpeg process (Linux).",
+        "text_file": "MIT.txt"
+      }
+    ],
+    "Patent licences": [
+      {
+        "name": "AV1 (rav1e, libaom, dav1d, SVT-AV1)",
+        "license": "AOMedia Patent License 1.0",
+        "url": "https://aomedia.org/license/patent-license/",
+        "note": "Royalty-free patent licence covering the AV1 implementations Smidge compiles in (rav1e) and those inside the FFmpeg process.",
+        "text_file": "AOMedia-Patent-1.0.txt"
+      },
+      {
+        "name": "VP8, VP9 and WebP (libvpx, libwebp)",
+        "license": "WebM Additional IP Rights Grant",
+        "url": "https://www.webmproject.org/license/additional/",
+        "note": "Google's patent grant for the WebM codec implementations, including libwebp compiled into Smidge.",
+        "text_file": "WebM-Patent-Grant.txt"
+      },
+      {
+        "name": "Opus (libopus)",
+        "license": "Xiph.Org, Broadcom and Microsoft patent grants",
+        "url": "https://opus-codec.org/license/",
+        "note": "Royalty-free patent grants from the Opus contributors, covering libopus compiled into the desktop app and inside the FFmpeg process.",
+        "text_file": "Opus-Patent-Grants.txt"
+      }
+    ],
+    "Fonts": []
+  },
+  "fonts": {
+    "@fontsource/inter": "Inter",
+    "@fontsource-variable/bricolage-grotesque": "Bricolage Grotesque"
+  },
+  "notes": {
+    "mozjpeg-sys": "This software is based in part on the work of the Independent JPEG Group.",
+    "symphonia*": "Used unmodified. Source: https://github.com/pdeljanov/Symphonia",
+    "mediabunny": "Used unmodified. Source: https://github.com/Vanilagy/mediabunny",
+    "option-ext": "Used unmodified. Source: https://github.com/soc/option-ext"
+  },
+  "exclude": {
+    "@types/*": "TypeScript declarations only; nothing from them is in the bundle."
+  },
+  "overrides": {
+    "mozjpeg-sys": {
+      "copyright": "Copyright (C) 2009-2023 D. R. Commander, Copyright (C) 2015 Viktor Szathmáry (libjpeg-turbo); the Independent JPEG Group (libjpeg); Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler (zlib)",
+      "text_file": "mozjpeg-sys-LICENSE.txt",
+      "note": "mozjpeg ships one combined licence file (IJG, libjpeg-turbo BSD-3-Clause, zlib); it is reproduced in full."
+    }
+  }
+}
