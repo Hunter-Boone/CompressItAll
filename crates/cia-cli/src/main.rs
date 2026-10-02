@@ -74,6 +74,11 @@ enum Cmd {
         only: Option<String>,
     },
     Presets,
+    /// Manage the FFmpeg download (install, status, remove).
+    Ffmpeg {
+        #[arg(value_parser = ["install", "status", "remove"])]
+        action: String,
+    },
 }
 
 struct Printer {
@@ -257,6 +262,63 @@ fn main() -> Result<()> {
     env_logger::init();
     let cli = Cli::parse();
     match &cli.cmd {
+        Cmd::Ffmpeg { action } => {
+            let app = app_data(&cli);
+            match action.as_str() {
+                "install" => {
+                    let mut last = String::new();
+                    let mut progress = |p: cia_engine::cia_ffmpeg::InstallProgress| {
+                        let line = match &p {
+                            cia_engine::cia_ffmpeg::InstallProgress::Downloading {
+                                done,
+                                total,
+                            } => format!(
+                                "downloading {} / {}",
+                                done,
+                                total.map(|t| t.to_string()).unwrap_or("?".into())
+                            ),
+                            other => format!("{other:?}"),
+                        };
+                        if line != last {
+                            eprintln!("  {line}");
+                            last = line;
+                        }
+                    };
+                    let installed = cia_engine::cia_ffmpeg::install(
+                        &app,
+                        &mut progress,
+                        &cia_engine::cia_ffmpeg::Cancel::new(),
+                    )
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                    println!(
+                        "installed FFmpeg {} at {}",
+                        installed.version,
+                        installed.ffmpeg.display()
+                    );
+                    let caps =
+                        cia_engine::video_ffmpeg::FfmpegBackend::from_installed(installed, &app)
+                            .map_err(|e| anyhow::anyhow!("{e}"))?;
+                    println!("working encoders: {:?}", caps.report.working);
+                }
+                "status" => match cia_engine::cia_ffmpeg::locate(&app) {
+                    Some(i) => println!(
+                        "FFmpeg {} at {} (user supplied: {})",
+                        i.version,
+                        i.ffmpeg.display(),
+                        i.user_supplied
+                    ),
+                    None => println!("not installed under {}", app.display()),
+                },
+                _ => {
+                    if let Some(i) = cia_engine::cia_ffmpeg::locate(&app) {
+                        cia_engine::cia_ffmpeg::remove(&i)?;
+                        println!("removed");
+                    } else {
+                        println!("nothing to remove");
+                    }
+                }
+            }
+        }
         Cmd::Presets => {
             for p in cia_core::presets::all() {
                 let limit = p

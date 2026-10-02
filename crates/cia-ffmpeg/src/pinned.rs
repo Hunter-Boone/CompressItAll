@@ -21,16 +21,23 @@ pub struct Pin {
     pub public_key: [u8; 32],
 }
 
-pub const VERSION: &str = "7.1.2";
+pub const VERSION: &str = "7.1.5";
 pub const REVISION: u32 = 1;
 
 pub const MANIFEST_URL: &str =
-    "https://github.com/Hunter-Boone/Smidge-Libraries/releases/download/ffmpeg-7.1.2-r1/manifest.json";
+    "https://github.com/Hunter-Boone/CompressItAll-Libraries-staging/releases/download/ffmpeg-7.1.5-r1/manifest.json";
 pub const SIGNATURE_URL: &str =
-    "https://github.com/Hunter-Boone/Smidge-Libraries/releases/download/ffmpeg-7.1.2-r1/manifest.json.sig";
+    "https://github.com/Hunter-Boone/CompressItAll-Libraries-staging/releases/download/ffmpeg-7.1.5-r1/manifest.json.sig";
 
-/// PLACEHOLDER public key (seed in test-keys.json, kid "libraries-dev").
+/// Public key of the Smidge-Libraries manifest signer (secret LIBRARIES_MANIFEST_KEY in that repo;
+/// backup of the seed in /home/hunter/work/test-lab-2026-09-21/smidge-libraries-manifest-key.txt).
 pub const PUBLIC_KEY: [u8; 32] = [
+    0xc5, 0x03, 0xfa, 0x37, 0x96, 0xc6, 0xc6, 0xce, 0x95, 0x04, 0x9d, 0xa9, 0x3d, 0x34, 0x42, 0x2f,
+    0xe4, 0x51, 0x6e, 0xc2, 0x2f, 0x34, 0xa6, 0xdb, 0xe3, 0xa9, 0x1d, 0x23, 0x7f, 0x68, 0xb1, 0x6f,
+];
+
+/// Development key whose seed is in test-keys.json (kid "libraries-dev"); tests sign with it.
+pub const DEV_PUBLIC_KEY: [u8; 32] = [
     0xd9, 0xc5, 0x05, 0xed, 0x7e, 0xf1, 0xbb, 0x33, 0x4f, 0xdc, 0x34, 0x26, 0x6a, 0xd7, 0x44, 0x4f,
     0x84, 0x67, 0xca, 0x57, 0xe2, 0xc1, 0xb4, 0x49, 0xd8, 0xae, 0x44, 0x93, 0xcb, 0x3d, 0x19, 0x22,
 ];
@@ -52,7 +59,7 @@ mod tests {
     use base64::Engine;
 
     #[test]
-    fn public_key_matches_test_keys_json() {
+    fn dev_public_key_matches_test_keys_json() {
         let doc: serde_json::Value =
             serde_json::from_str(include_str!("../test-keys.json")).unwrap();
         let entry = doc["keys"]
@@ -69,7 +76,7 @@ mod tests {
         let public = ed25519_dalek::SigningKey::from_bytes(&seed)
             .verifying_key()
             .to_bytes();
-        assert_eq!(public, PUBLIC_KEY);
+        assert_eq!(public, DEV_PUBLIC_KEY);
         let hex: String = public.iter().map(|b| format!("{b:02x}")).collect();
         assert_eq!(hex, entry["public_key_hex"]);
     }

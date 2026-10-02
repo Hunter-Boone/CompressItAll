@@ -13,6 +13,8 @@ pub mod planners;
 pub mod run;
 #[cfg(feature = "ffmpeg")]
 pub mod video_ffmpeg;
+#[cfg(feature = "ffmpeg")]
+pub use cia_ffmpeg;
 
 use cia_core::*;
 use std::sync::atomic::{AtomicBool, Ordering};

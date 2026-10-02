@@ -284,8 +284,8 @@ pub fn install_with(
         done: 0,
         total: None,
     });
-    let manifest_bytes = fetcher.fetch(pin.manifest_url, &mut |_, _| {}, cancel)?;
-    let signature = fetcher.fetch(pin.signature_url, &mut |_, _| {}, cancel)?;
+    let manifest_bytes = fetcher.fetch(&mirror_url(pin.manifest_url), &mut |_, _| {}, cancel)?;
+    let signature = fetcher.fetch(&mirror_url(pin.signature_url), &mut |_, _| {}, cancel)?;
     check(cancel)?;
     let manifest = verify_manifest(&manifest_bytes, &signature, &pin.public_key)?;
     if manifest.version != pin.version {
@@ -304,7 +304,7 @@ pub fn install_with(
     let total = (asset.bytes > 0).then_some(asset.bytes);
     progress(InstallProgress::Downloading { done: 0, total });
     let zip_bytes = fetcher.fetch(
-        &asset.url,
+        &mirror_url(&asset.url),
         &mut |done, reported| {
             progress(InstallProgress::Downloading {
                 done,
@@ -649,6 +649,19 @@ pub fn install(
 ) -> Result<InstalledFfmpeg, InstallError> {
     let fetcher = HttpFetcher::new()?;
     install_with(&fetcher, &crate::pinned::PIN, app_data, progress, cancel)
+}
+
+/// `CIA_FFMPEG_MANIFEST_BASE` (tests, CI, lab runs) points every release URL at a mirror of the
+/// pinned release: the directory part of each URL is replaced, the file names and the pinned
+/// public key stay, so the signature and hashes are still verified. Unset in normal use.
+pub fn mirror_url(url: &str) -> String {
+    match std::env::var("CIA_FFMPEG_MANIFEST_BASE") {
+        Ok(base) if !base.is_empty() => {
+            let name = url.rsplit('/').next().unwrap_or(url);
+            format!("{}/{}", base.trim_end_matches('/'), name)
+        }
+        _ => url.to_string(),
+    }
 }
 
 #[cfg(test)]

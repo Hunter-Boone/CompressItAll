@@ -159,7 +159,7 @@ pub fn run(
                         failure.closest_bytes,
                         failure.message.clone(),
                         None,
-                        expected_failure(&name),
+                        expected_failure(&name, summary.input_bytes),
                         failure.code.clone(),
                         false,
                     ),
@@ -318,7 +318,7 @@ fn expected_refusal(name: &str, preset: &str, code: &RefusalCode) -> bool {
     }
 }
 
-fn expected_failure(name: &str) -> bool {
+fn expected_failure(name: &str, input_bytes: u64) -> bool {
     let n = name.to_ascii_lowercase();
-    n.contains("corrupt") || n.contains("truncated") || n.contains("encrypted")
+    input_bytes == 0 || n.contains("corrupt") || n.contains("truncated") || n.contains("encrypted")
 }
