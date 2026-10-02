@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/engine-client" },
+    { "path": "packages/ui" },
+    { "path": "apps/web" }
+  ]
+}

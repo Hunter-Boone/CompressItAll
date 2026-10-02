@@ -1,0 +1,1 @@
+{ "name": "Smidge", "short_name": "Smidge", "start_url": "/", "display": "standalone", "background_color": "#14121B", "theme_color": "#6D4AFF", "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }] }
