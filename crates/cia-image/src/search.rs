@@ -176,40 +176,73 @@ fn estimate_lossless(img: &DecodedImage, cls: Class, c: Candidate) -> Option<u64
     }
     let small = crate::resize::downscale(img, w, h, false);
     let input = EncodeInput { img: &small, class: cls };
-    let bytes = encode(&input, c, 0).ok()?.len() as u64;
+    let bytes = crate::encode::encode_estimate(&input, c).ok()?.len() as u64;
     // Quarter scale under-represents detail; lossless sizes scale slightly worse than linearly.
     Some(bytes * 16 * 9 / 10)
 }
 
 /// Try every candidate at this size against `budget`; returns the winner per 3.4.5.
+/// Candidates run in parallel on native (up to 3 at a time), each with its own encode cache;
+/// attempts are merged back afterwards.
 fn try_size(enc: &mut Encoder, cands: &[Candidate], budget: u64, progress: ProgressFn, base: f32) -> Result<Option<Found>, ImageError> {
-    let mut fits: Vec<Found> = Vec::new();
-    let n = cands.len().max(1) as f32;
     let cls = enc.input.class;
-    for (i, &c) in cands.iter().enumerate() {
+    // Pre-screen lossless/palette candidates with a cheap quarter-scale estimate.
+    let mut todo: Vec<Candidate> = Vec::new();
+    for &c in cands {
         if !c.is_lossy() {
             let t = now_ms();
             let est = estimate_lossless(enc.input.img, cls, c);
             log::debug!("estimate {:?} = {:?} in {} ms", c, est, now_ms() - t);
             if let Some(est) = est {
                 if est > budget * 3 {
-                    continue; // cannot plausibly fit; skip the expensive full-size encode
+                    continue;
                 }
             }
         }
-        progress(base + (i as f32 / n) * 0.6, &format!("Trying {}", c.format().token().to_uppercase()));
-        if c.is_lossy() {
-            if let Some((q, _)) = search_quality(enc, c, budget)? {
-                let bytes = enc.run(c, q)?.to_vec();
-                fits.push(Found { candidate: c, quality: Some(q), bytes });
+        todo.push(c);
+    }
+    progress(base, "Trying formats");
+    let img = enc.input.img;
+    let max_encodes = enc.max_encodes;
+    let cancel = enc.cancel;
+    let run_one = |c: Candidate| -> Result<(Option<Found>, Vec<ImageAttempt>, u32), ImageError> {
+        let mut e = Encoder { input: EncodeInput { img, class: cls }, cache: HashMap::new(), attempts: Vec::new(), encodes: 0, max_encodes, cancel };
+        let found = if c.is_lossy() {
+            match search_quality(&mut e, c, budget)? {
+                Some((q, _)) => Some(Found { candidate: c, quality: Some(q), bytes: e.run(c, q)?.to_vec() }),
+                None => None,
             }
         } else {
-            let bytes = enc.run(c, 0)?.to_vec();
-            if (bytes.len() as u64) < budget {
-                // A lossless candidate that fits wins immediately.
-                return Ok(Some(Found { candidate: c, quality: None, bytes }));
-            }
+            let bytes = e.run(c, 0)?.to_vec();
+            if (bytes.len() as u64) < budget { Some(Found { candidate: c, quality: None, bytes }) } else { None }
+        };
+        Ok((found, e.attempts, e.encodes))
+    };
+    #[cfg(not(target_arch = "wasm32"))]
+    let results: Vec<Result<(Option<Found>, Vec<ImageAttempt>, u32), ImageError>> = {
+        use rayon::prelude::*;
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(3).build();
+        match pool {
+            Ok(pool) => pool.install(|| todo.par_iter().map(|&c| run_one(c)).collect()),
+            Err(_) => todo.iter().map(|&c| run_one(c)).collect(),
         }
+    };
+    #[cfg(target_arch = "wasm32")]
+    let results: Vec<Result<(Option<Found>, Vec<ImageAttempt>, u32), ImageError>> = todo.iter().map(|&c| run_one(c)).collect();
+    let mut fits: Vec<Found> = Vec::new();
+    for r in results {
+        let (found, attempts, encodes) = r?;
+        enc.attempts.extend(attempts);
+        enc.encodes += encodes;
+        if let Some(f) = found {
+            // A lossless candidate that fits wins immediately (3.4.5 rule 1), in candidate order.
+            fits.push(f);
+        }
+    }
+    if let Some(pos) = fits.iter().position(|f| !f.candidate.is_lossy()) {
+        let first_lossless = fits.iter().filter(|f| !f.candidate.is_lossy()).min_by_key(|f| cands.iter().position(|c| *c == f.candidate)).map(|f| f.candidate).unwrap();
+        let idx = fits.iter().position(|f| f.candidate == first_lossless).unwrap_or(pos);
+        return Ok(Some(fits.swap_remove(idx)));
     }
     if fits.is_empty() {
         return Ok(None);

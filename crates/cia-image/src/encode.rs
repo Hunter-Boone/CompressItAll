@@ -11,6 +11,15 @@ pub struct EncodeInput<'a> {
 }
 
 pub fn encode(input: &EncodeInput, candidate: Candidate, quality: u8) -> Result<Vec<u8>, ImageError> {
+    encode_with(input, candidate, quality, false)
+}
+
+/// Fast, lower-effort encode used only for size estimates (never written out).
+pub fn encode_estimate(input: &EncodeInput, candidate: Candidate) -> Result<Vec<u8>, ImageError> {
+    encode_with(input, candidate, candidate.quality_range().map(|r| r.0).unwrap_or(0), true)
+}
+
+fn encode_with(input: &EncodeInput, candidate: Candidate, quality: u8, fast: bool) -> Result<Vec<u8>, ImageError> {
     let img = input.img;
     match candidate {
         Candidate::Jpeg => {
@@ -29,7 +38,7 @@ pub fn encode(input: &EncodeInput, candidate: Candidate, quality: u8) -> Result<
         }
         Candidate::WebpLossless => {
             // Effort 100 (method 6) costs about 4 s per megapixel; above 2 MP effort 60 keeps it usable.
-            let effort = if img.pixels() > 2_000_000 { 60 } else { 100 };
+            let effort = if fast { 20 } else if img.pixels() > 500_000 { 60 } else { 100 };
             if img.has_alpha {
                 cia_webp::encode_lossless(&img.rgba, img.width, img.height, true, effort).map_err(|e| ImageError::Encoder(e.to_string()))
             } else {
@@ -48,21 +57,21 @@ pub fn encode(input: &EncodeInput, candidate: Candidate, quality: u8) -> Result<
             };
             res.map(|e| e.avif_file).map_err(|e| ImageError::Encoder(e.to_string()))
         }
-        Candidate::PngLossless => png_lossless(img),
-        Candidate::PngPalette(colours) => png_palette(img, colours),
+        Candidate::PngLossless => png_lossless(img, fast),
+        Candidate::PngPalette(colours) => png_palette(img, colours, fast),
     }
 }
 
-/// Raw PNG (fast, unoptimised) then oxipng preset 4, strip safe, zopfli under 2 MP.
-pub fn png_lossless(img: &DecodedImage) -> Result<Vec<u8>, ImageError> {
+/// Raw PNG (fast, unoptimised) then oxipng preset 4, strip safe, zopfli for small images.
+pub fn png_lossless(img: &DecodedImage, fast: bool) -> Result<Vec<u8>, ImageError> {
     let raw = raw_png(img.width, img.height, &img.rgba, img.has_alpha)?;
-    oxipng_optimise(&raw, img.pixels() < 500_000)
+    oxipng_optimise(&raw, !fast && img.pixels() < 500_000, fast)
 }
 
-pub fn oxipng_optimise(png: &[u8], zopfli: bool) -> Result<Vec<u8>, ImageError> {
+pub fn oxipng_optimise(png: &[u8], zopfli: bool, fast: bool) -> Result<Vec<u8>, ImageError> {
     // Preset 4 under 4 MP (the design's setting); preset 2 above, where 4 costs tens of seconds for a few percent.
     let big = png.len() > 12_000_000;
-    let mut opts = oxipng::Options::from_preset(if big { 2 } else { 4 });
+    let mut opts = oxipng::Options::from_preset(if fast { 1 } else if big { 2 } else { 4 });
     opts.strip = oxipng::StripChunks::Safe;
     opts.optimize_alpha = true;
     if zopfli {
@@ -87,7 +96,7 @@ fn raw_png(width: u32, height: u32, rgba: &[u8], has_alpha: bool) -> Result<Vec<
 }
 
 /// Quantise packed RGB to at most `colours` colours (k-means, Floyd-Steinberg dithered).
-pub fn quantise_rgb(rgb: &[u8], width: u32, height: u32, colours: u16) -> Result<(Vec<[u8; 3]>, Vec<u8>), ImageError> {
+pub fn quantise_rgb(rgb: &[u8], width: u32, height: u32, colours: u16, fast: bool) -> Result<(Vec<[u8; 3]>, Vec<u8>), ImageError> {
     use quantette::deps::palette::cast::from_component_slice;
     use quantette::deps::palette::Srgb;
     use quantette::dither::FloydSteinberg;
@@ -96,18 +105,18 @@ pub fn quantise_rgb(rgb: &[u8], width: u32, height: u32, colours: u16) -> Result
     let image = ImageRef::new(width, height, pixels).map_err(|e| ImageError::Encoder(e.to_string()))?;
     let size = PaletteSize::try_from(colours.clamp(2, 256)).map_err(|e| ImageError::Encoder(e.to_string()))?;
     // k-means is the better quantiser but costs seconds on large images; Wu is close and fast.
-    let method = if (width as u64 * height as u64) > 1_000_000 { QuantizeMethod::Wu } else { QuantizeMethod::kmeans() };
+    let method = if fast || (width as u64 * height as u64) > 1_000_000 { QuantizeMethod::Wu } else { QuantizeMethod::kmeans() };
     let indexed = Pipeline::new().palette_size(size).quantize_method(method).ditherer(FloydSteinberg::new()).input_image(image).output_srgb8_indexed_image();
     let (pal, idx) = indexed.into_parts();
     Ok((pal.iter().map(|c| [c.red, c.green, c.blue]).collect(), idx))
 }
 
 /// Palette-quantised PNG via quantette (k-means, dithered), then oxipng.
-pub fn png_palette(img: &DecodedImage, colours: u16) -> Result<Vec<u8>, ImageError> {
+pub fn png_palette(img: &DecodedImage, colours: u16, fast: bool) -> Result<Vec<u8>, ImageError> {
     let rgba = image::RgbaImage::from_raw(img.width, img.height, img.rgba.clone()).ok_or_else(|| ImageError::Encoder("buffer".into()))?;
     let (palette, indices): (Vec<[u8; 4]>, Vec<u8>) = if img.has_alpha {
         // quantette works on RGB; quantise colour, then carry alpha per pixel bucketed to 16 levels.
-        let (pal, idx) = quantise_rgb(&img.rgb(), img.width, img.height, colours.min(255))?;
+        let (pal, idx) = quantise_rgb(&img.rgb(), img.width, img.height, colours.min(255), fast)?;
         // Build an RGBA palette by combining colour index and alpha level; cap at 256 entries by alpha bucketing.
         let mut combos: Vec<[u8; 4]> = Vec::new();
         let mut map = std::collections::HashMap::<(u8, u8), u8>::new();
@@ -145,11 +154,11 @@ pub fn png_palette(img: &DecodedImage, colours: u16) -> Result<Vec<u8>, ImageErr
         }
         (combos, out_idx)
     } else {
-        let (pal, idx) = quantise_rgb(&img.rgb(), img.width, img.height, colours)?;
+        let (pal, idx) = quantise_rgb(&img.rgb(), img.width, img.height, colours, fast)?;
         (pal.iter().map(|c| [c[0], c[1], c[2], 255]).collect(), idx)
     };
     let raw = indexed_png(img.width, img.height, &palette, &indices)?;
-    oxipng_optimise(&raw, img.pixels() < 500_000)
+    oxipng_optimise(&raw, !fast && img.pixels() < 500_000, fast)
 }
 
 /// Write an 8-bit indexed PNG with PLTE (+tRNS when any alpha < 255).

@@ -108,7 +108,7 @@ pub fn encode_gif(anim: &Animation, colours: u16, drop_half: bool, scale_long_ed
                 }
             }
             let rgb: Vec<u8> = flat.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
-            let (pal, idx) = crate::encode::quantise_rgb(&rgb, w, h, colours.clamp(3, 256) - 1)?;
+            let (pal, idx) = crate::encode::quantise_rgb(&rgb, w, h, colours.clamp(3, 256) - 1, anim.frames.len() > 60)?;
             let transparent = pal.len() as u8; // extra palette slot for "unchanged"
             let mut palette: Vec<u8> = pal.iter().flat_map(|c| [c[0], c[1], c[2]]).collect();
             palette.extend_from_slice(&[0, 0, 0]);
