@@ -237,6 +237,9 @@ for (const [key, c] of crates) {
 const npmShipped = new Map(); // name@version -> name
 function walkNpm(node) {
   for (const [name, dep] of Object.entries(node.dependencies || {})) {
+    // npm 10 installs some platform-gated optional packages (e.g. @img/sharp-wasm32) and lists
+    // them at the root as extraneous; they are not reachable from apps/web and not shipped.
+    if (dep.extraneous) continue;
     if (!dep.version) {
       problems.push(`npm ls: ${name} has no version (not installed?)`);
       continue;
@@ -246,7 +249,10 @@ function walkNpm(node) {
     walkNpm(dep);
   }
 }
-walkNpm(npmTree);
+// `npm ls -w apps/web` puts the workspace under the root; walk only that subtree.
+const webRoot = (npmTree.dependencies || {})["@cia/web"];
+if (!webRoot) problems.push("npm ls: @cia/web missing from the tree");
+walkNpm(webRoot || npmTree);
 if (!npmShipped.size) problems.push("npm ls produced no packages");
 
 const npmEntries = [];

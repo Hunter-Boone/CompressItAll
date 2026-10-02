@@ -23,6 +23,12 @@ pub fn mb_whole(bytes: u64) -> String {
         return format!("{} GB", trim_zero(v));
     }
     if bytes >= 1_000_000 {
+        // A typed custom value such as 1.5 MB or 1.25 MB keeps its decimals; a preset limit
+        // like 18,196,153 bytes (Email) still reads "18 MB".
+        if !bytes.is_multiple_of(1_000_000) && bytes.is_multiple_of(10_000) {
+            let s = format!("{:.2}", bytes as f64 / 1_000_000.0);
+            return format!("{} MB", s.trim_end_matches('0').trim_end_matches('.'));
+        }
         return format!("{} MB", (bytes as f64 / 1_000_000.0).floor() as u64);
     }
     format!("{} KB", (bytes as f64 / 1_000.0).floor() as u64)
@@ -93,5 +99,16 @@ mod tests {
     fn clock() {
         assert_eq!(clock_time(0, 0), "00:00");
         assert_eq!(clock_time(38_520, -240), "06:42");
+    }
+
+    #[test]
+    fn whole_limits_keep_typed_decimals_only() {
+        assert_eq!(mb_whole(20 * 1024 * 1024), "20 MB");
+        assert_eq!(mb_whole(18_196_153), "18 MB");
+        assert_eq!(mb_whole(1_500_000), "1.5 MB");
+        assert_eq!(mb_whole(1_250_000), "1.25 MB");
+        assert_eq!(mb_whole(8_000_000), "8 MB");
+        assert_eq!(mb_whole(2_000_000_000), "2 GB");
+        assert_eq!(mb_whole(512_000), "512 KB");
     }
 }
