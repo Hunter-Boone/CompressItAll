@@ -101,14 +101,18 @@ fn label(p: &cia_audio::plan::AudioPlan) -> QualityLabel {
 }
 
 /// Encode with the pure-Rust encoders this crate has (FLAC, WAV, Opus natively). MP3/AAC need the video backend (FFmpeg); the engine routes those.
+pub type ExternalAudio<'a> =
+    &'a (dyn Fn(&cia_audio::plan::AudioPlan) -> Result<Vec<u8>, String> + Sync);
+
 pub fn run(
     item: &InputItem,
     bytes: &[u8],
     budget: Option<u64>,
     caps: &HostAudioCaps,
     ctx: &Ctx,
+    external: Option<ExternalAudio>,
 ) -> PlannerOutcome {
-    let info = match cia_audio::probe(bytes) {
+    let mut info = match cia_audio::probe(bytes) {
         Ok(i) => i,
         Err(_) => {
             return PlannerOutcome::Failed {
@@ -118,57 +122,86 @@ pub fn run(
             }
         }
     };
-    if info.needs_ffmpeg {
+    // AAC/ALAC/WMA: the pure-Rust decoder cannot read them; duration and channels come from the host's probe.
+    if info.duration_ms == 0 {
+        info.duration_ms = item.detail.duration_ms.unwrap_or(0);
+    }
+    if info.channels == 0 {
+        info.channels = item
+            .detail
+            .audio_streams
+            .first()
+            .map(|a| a.channels as u16)
+            .unwrap_or(2);
+    }
+    let formats = allowed(ctx);
+    let mut attempts = Vec::new();
+    // Already fits in an allowed format: nothing to do.
+    if let Some(b) = budget {
+        if (bytes.len() as u64) <= b
+            && ctx.hard_bytes.is_none_or(|h| (bytes.len() as u64) < h)
+            && ctx.options.audio.format == AudioFormatPref::Automatic
+            && formats.iter().any(|f| {
+                AudioFormat::from_id(f).is_some_and(|af| af.id() == native_id(&info.codec))
+            })
+        {
+            return PlannerOutcome::KeptOriginal { attempts: vec![] };
+        }
+    }
+    if info.needs_ffmpeg && external.is_none() {
         return PlannerOutcome::Refused {
             code: RefusalCode::NeedsFfmpeg,
             smallest_bytes: None,
             attempts: vec![],
         };
     }
-    let formats = allowed(ctx);
-    let mut attempts = Vec::new();
-    let decoded = match cia_audio::decode(bytes, None) {
-        Ok(d) => d,
-        Err(e) => {
-            return PlannerOutcome::Failed {
-                code: "damaged_input",
-                message: Some(e.to_string()),
-                closest_bytes: None,
+    if info.needs_ffmpeg && info.duration_ms == 0 && budget.is_some() {
+        return PlannerOutcome::Failed {
+            code: "damaged_input",
+            message: None,
+            closest_bytes: None,
+        };
+    }
+    if info.bitrate_bps.is_none() && info.duration_ms > 0 {
+        info.bitrate_bps = Some(bytes.len() as u64 * 8000 / info.duration_ms);
+    }
+    // Decode natively when we can (FLAC/WAV/Opus/MP3/Vorbis); AAC-family inputs are encoded straight from the source by FFmpeg.
+    let decoded = if info.needs_ffmpeg {
+        None
+    } else {
+        match cia_audio::decode(bytes, None) {
+            Ok(d) => Some(d),
+            Err(e) => {
+                return PlannerOutcome::Failed {
+                    code: "damaged_input",
+                    message: Some(e.to_string()),
+                    closest_bytes: None,
+                }
             }
         }
     };
     let mut plan = match budget {
-        Some(b) => {
-            if (bytes.len() as u64) < b
-                && !ctx.options.audio.format.ne(&AudioFormatPref::Automatic)
-                && formats.iter().any(|f| {
-                    AudioFormat::from_id(f).is_some_and(|af| af.id() == native_id(&info.codec))
-                })
-            {
-                return PlannerOutcome::KeptOriginal { attempts: vec![] };
-            }
-            match cia_audio::plan::plan_fit(
-                info.duration_ms,
-                b,
-                &formats,
-                caps,
-                info.channels,
-                if info.lossless {
-                    Some(bytes.len() as u64)
-                } else {
-                    None
-                },
-            ) {
-                Ok(p) => p,
-                Err(code) => {
-                    return PlannerOutcome::Refused {
-                        code,
-                        smallest_bytes: None,
-                        attempts,
-                    }
+        Some(b) => match cia_audio::plan::plan_fit(
+            info.duration_ms,
+            b,
+            &formats,
+            caps,
+            info.channels,
+            if info.lossless {
+                Some(bytes.len() as u64)
+            } else {
+                None
+            },
+        ) {
+            Ok(p) => p,
+            Err(code) => {
+                return PlannerOutcome::Refused {
+                    code,
+                    smallest_bytes: None,
+                    attempts,
                 }
             }
-        }
+        },
         None => match cia_audio::plan::plan_smaller(
             &info,
             ctx.smaller.unwrap_or(SmallerLevel::KeepQuality),
@@ -201,6 +234,28 @@ pub fn run(
             }
         },
     };
+    // AAC-family sources can only be produced through FFmpeg, so the plan must be an FFmpeg format.
+    if decoded.is_none() && !matches!(plan.format, AudioFormat::Mp3 | AudioFormat::M4aAac) {
+        let fallback = formats
+            .iter()
+            .filter_map(|f| AudioFormat::from_id(f))
+            .find(|f| matches!(f, AudioFormat::Mp3 | AudioFormat::M4aAac) && caps.can(*f));
+        match fallback {
+            Some(f) => {
+                plan.format = f;
+                if plan.bitrate_bps == 0 {
+                    plan.bitrate_bps = 128_000;
+                }
+            }
+            None => {
+                return PlannerOutcome::Refused {
+                    code: RefusalCode::NeedsFfmpeg,
+                    smallest_bytes: None,
+                    attempts: vec![],
+                }
+            }
+        }
+    }
     let hard = ctx.hard_bytes;
     for n in 1..=4u32 {
         if (ctx.cancel)() {
@@ -211,19 +266,23 @@ pub fn run(
             };
         }
         (ctx.progress)(0.2 * n as f32, "Encoding audio");
-        let src = if plan.channels < decoded.channels {
-            cia_audio::downmix_mono(&decoded)
-        } else {
-            decoded.clone()
-        };
-        let out: Result<Vec<u8>, String> = match plan.format {
-            AudioFormat::Flac => cia_audio::encode_flac(&src, 8).map_err(|e| e.to_string()),
-            AudioFormat::Wav => Ok(cia_audio::encode_wav(&src)),
-            AudioFormat::OggOpus => {
+        let src = decoded.as_ref().map(|d| {
+            if plan.channels < d.channels {
+                cia_audio::downmix_mono(d)
+            } else {
+                d.clone()
+            }
+        });
+        let out: Result<Vec<u8>, String> = match (plan.format, &src) {
+            (AudioFormat::Flac, Some(src)) => {
+                cia_audio::encode_flac(src, 8).map_err(|e| e.to_string())
+            }
+            (AudioFormat::Wav, Some(src)) => Ok(cia_audio::encode_wav(src)),
+            (AudioFormat::OggOpus, Some(src)) => {
                 #[cfg(feature = "opus")]
                 {
                     cia_audio::encode_opus_ogg(
-                        &src,
+                        src,
                         plan.bitrate_bps,
                         plan.channels,
                         if plan.opus_voip() {
@@ -239,7 +298,11 @@ pub fn run(
                     Err("opus encoder not available on this host".to_string())
                 }
             }
-            AudioFormat::Mp3 | AudioFormat::M4aAac => Err("needs ffmpeg".into()),
+            (AudioFormat::Mp3 | AudioFormat::M4aAac, _) => match external {
+                Some(f) => f(&plan),
+                None => Err("needs ffmpeg".into()),
+            },
+            (_, None) => Err("needs ffmpeg".into()),
         };
         let bytes_out = match out {
             Ok(b) => b,

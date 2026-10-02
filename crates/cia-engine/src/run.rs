@@ -821,7 +821,27 @@ impl Engine {
             }
             Kind::AnimatedImage => planners::image::run_animated(item, &bytes, budget, ctx),
             Kind::Pdf => planners::pdf::run(item, &bytes, budget, ctx),
-            Kind::Audio => planners::audio::run(item, &bytes, budget, &audio_caps, ctx),
+            Kind::Audio => {
+                let trim = ctx.options.video.trims.get(&item.id).copied();
+                let video = self.video.clone();
+                let src = item.source.clone();
+                let ext = move |p: &cia_audio::plan::AudioPlan| -> Result<Vec<u8>, String> {
+                    match &video {
+                        Some(v) => v
+                            .encode_audio(
+                                &src,
+                                p.format.id(),
+                                p.bitrate_bps,
+                                p.channels,
+                                p.sample_rate,
+                                trim,
+                            )
+                            .map_err(|e| e.to_string()),
+                        None => Err("needs ffmpeg".into()),
+                    }
+                };
+                planners::audio::run(item, &bytes, budget, &audio_caps, ctx, Some(&ext))
+            }
             Kind::Archive => self.run_archive(item, &bytes, budget, ctx, allowed),
             Kind::OfficeDoc => planners::office::run(item, &bytes, budget, ctx, self.can_video()),
             Kind::Text => planners::plain::run_text(item, &bytes, budget, ctx),
@@ -908,7 +928,9 @@ impl Engine {
                     planners::image::run_animated(&sub_item, data, sub_budget, ctx)
                 }
                 Kind::Pdf => planners::pdf::run(&sub_item, data, sub_budget, ctx),
-                Kind::Audio => planners::audio::run(&sub_item, data, sub_budget, &audio_caps, ctx),
+                Kind::Audio => {
+                    planners::audio::run(&sub_item, data, sub_budget, &audio_caps, ctx, None)
+                }
                 _ => PlannerOutcome::KeptOriginal { attempts: vec![] },
             };
             let _ = allowed;

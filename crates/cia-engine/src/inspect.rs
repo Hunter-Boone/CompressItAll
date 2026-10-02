@@ -105,8 +105,20 @@ impl Engine {
                         }];
                         if info.needs_ffmpeg {
                             if let Some(v) = &self.video {
-                                if let Ok(p) = v.probe(&spec.source) {
-                                    item.detail.duration_ms = Some(p.duration_ms);
+                                if let Ok((dur, ch, sr)) = v.probe_audio(&spec.source) {
+                                    item.detail.duration_ms = Some(dur);
+                                    item.detail.audio_streams = vec![AudioStreamInfo {
+                                        index: 0,
+                                        codec: info.codec.clone(),
+                                        channels: ch as u32,
+                                        sample_rate: sr,
+                                        bitrate_bps: if dur > 0 {
+                                            Some(bytes * 8 * 1000 / dur)
+                                        } else {
+                                            None
+                                        },
+                                        title: None,
+                                    }];
                                 }
                             }
                         }

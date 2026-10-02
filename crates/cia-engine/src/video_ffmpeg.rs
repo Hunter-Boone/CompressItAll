@@ -189,4 +189,109 @@ impl VideoBackend for FfmpegBackend {
     fn capabilities(&self) -> Option<FfmpegCapabilities> {
         Some(self.report.capabilities(&self.session.installed))
     }
+
+    fn probe_audio(&self, source: &SourceRef) -> Result<(u64, u16, u32), EngineError> {
+        let input = Self::path_of(source)?;
+        let out = std::process::Command::new(&self.session.installed.ffprobe)
+            .args([
+                "-v",
+                "error",
+                "-print_format",
+                "json",
+                "-show_format",
+                "-show_streams",
+                "-select_streams",
+                "a:0",
+            ])
+            .arg(&input)
+            .output()
+            .map_err(|e| EngineError::Other(e.to_string()))?;
+        if !out.status.success() {
+            return Err(EngineError::Damaged("ffprobe failed".into()));
+        }
+        let v: serde_json::Value =
+            serde_json::from_slice(&out.stdout).map_err(|e| EngineError::Damaged(e.to_string()))?;
+        let dur = v["format"]["duration"]
+            .as_str()
+            .and_then(|d| d.parse::<f64>().ok())
+            .or_else(|| {
+                v["streams"][0]["duration"]
+                    .as_str()
+                    .and_then(|d| d.parse::<f64>().ok())
+            })
+            .unwrap_or(0.0);
+        let ch = v["streams"][0]["channels"].as_u64().unwrap_or(2) as u16;
+        let sr = v["streams"][0]["sample_rate"]
+            .as_str()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(44_100);
+        Ok(((dur * 1000.0).round() as u64, ch, sr))
+    }
+
+    fn encode_audio(
+        &self,
+        source: &SourceRef,
+        format: &str,
+        bitrate_bps: u32,
+        channels: u16,
+        sample_rate: u32,
+        trim: Option<(u64, u64)>,
+    ) -> Result<Vec<u8>, EngineError> {
+        let input = Self::path_of(source)?;
+        let (codec, ext) = match format {
+            "mp3" => ("libmp3lame", "mp3"),
+            "m4a_aac" => ("aac", "m4a"),
+            other => return Err(EngineError::Unsupported(other.into())),
+        };
+        let caps = self.report.capabilities(&self.session.installed);
+        if (codec == "libmp3lame" && !caps.has_libmp3lame) || (codec == "aac" && !caps.has_aac) {
+            return Err(EngineError::Unsupported(format!(
+                "{codec} not in this FFmpeg"
+            )));
+        }
+        let out = std::env::temp_dir().join(format!(".smidge-audio-{}.{ext}", cia_core::new_id()));
+        let mut cmd = std::process::Command::new(&self.session.installed.ffmpeg);
+        cmd.args(["-v", "error", "-nostdin", "-y", "-i"])
+            .arg(&input);
+        if let Some((start, end)) = trim {
+            cmd.args([
+                "-ss",
+                &format!("{:.3}", start as f64 / 1000.0),
+                "-to",
+                &format!("{:.3}", end as f64 / 1000.0),
+            ]);
+        }
+        cmd.args([
+            "-vn",
+            "-map_metadata",
+            "-1",
+            "-c:a",
+            codec,
+            "-b:a",
+            &bitrate_bps.to_string(),
+            "-ac",
+            &channels.to_string(),
+            "-ar",
+            &sample_rate.to_string(),
+        ]);
+        if ext == "m4a" {
+            cmd.args(["-movflags", "+faststart"]);
+        }
+        cmd.arg(&out);
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x0800_0000);
+        }
+        let status = cmd
+            .status()
+            .map_err(|e| EngineError::Other(e.to_string()))?;
+        if !status.success() {
+            let _ = std::fs::remove_file(&out);
+            return Err(EngineError::Other(format!("ffmpeg exited with {status}")));
+        }
+        let bytes = std::fs::read(&out).map_err(|e| EngineError::Io(e.to_string()))?;
+        let _ = std::fs::remove_file(&out);
+        Ok(bytes)
+    }
 }

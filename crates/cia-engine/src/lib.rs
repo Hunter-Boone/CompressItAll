@@ -72,6 +72,28 @@ pub trait VideoBackend: Send + Sync {
     ) -> Result<VideoTranscodeResult, EngineError>;
     fn encoder_kind(&self, faster: bool) -> cia_video_plan::EncoderKind;
     fn capabilities(&self) -> Option<FfmpegCapabilities>;
+    /// Duration and channel count of an audio-only file the pure-Rust decoders cannot read.
+    fn probe_audio(&self, source: &SourceRef) -> Result<(u64, u16, u32), EngineError> {
+        self.probe(source).map(|p| {
+            (
+                p.duration_ms,
+                p.audio.first().map(|a| a.channels as u16).unwrap_or(2),
+                p.audio.first().map(|a| a.sample_rate).unwrap_or(44_100),
+            )
+        })
+    }
+    /// Encode audio to MP3 or AAC (formats the pure-Rust crates cannot produce). `format` is "mp3" or "m4a_aac".
+    fn encode_audio(
+        &self,
+        _source: &SourceRef,
+        _format: &str,
+        _bitrate_bps: u32,
+        _channels: u16,
+        _sample_rate: u32,
+        _trim: Option<(u64, u64)>,
+    ) -> Result<Vec<u8>, EngineError> {
+        Err(EngineError::Unsupported("audio encoder".into()))
+    }
 }
 
 #[derive(Debug, Clone)]
