@@ -14,8 +14,36 @@
  * `createSyncAccessHandle` (falling back to `createWritable`, then to in-memory
  * Blobs returned in the reply when OPFS is missing).
  */
-import type { Capabilities, EngineEvent, InputItem, JobSummary, Plan, WebCapabilities } from "@cia/engine-client";
+import type { Attempt, Budget, Capabilities, Decision, EngineEvent, InputItem, JobSummary, Plan, PlanOptions, PlanRefusal, SourceRef, Target, VerificationReport, VideoFormat, VideoPlan, VideoProbe, WebCapabilities } from "@cia/engine-client";
 import type { PlanRequest } from "@cia/engine-client";
+
+/** `cia_engine::VideoWork`: one video item the host transcodes before `run` (docs/DECISIONS.md, web video split). */
+export interface VideoWork {
+  item_id: string;
+  source: SourceRef;
+  budget: Budget;
+  target: Target;
+  options: PlanOptions;
+  faster: boolean;
+  allowed: VideoFormat[];
+  hard_bytes: bigint | null;
+}
+
+/** What the video worker reports back for `set_video_result` (`cia_wasm::VideoResultIn`). */
+export interface VideoResultIn {
+  kept_original?: boolean;
+  plan?: VideoPlan | null;
+  attempts?: Attempt[];
+  verification?: VerificationReport | null;
+  /** "cancelled", "damaged", "refused", "over" or a failure code; absent when the encode fit. */
+  error?: string | null;
+  message?: string | null;
+  closest_bytes?: bigint | null;
+  max_duration_ms?: bigint | null;
+}
+
+export type PlanOut = { type: "plan"; plan: VideoPlan } | { type: "refusal"; refusal: PlanRefusal };
+export type VideoRpcName = "plan_video" | "retry_video" | "decide_video";
 
 // ---- wasm-bindgen exports we use (the generated .d.ts is not committed) ----
 interface CiaWasm {
@@ -30,7 +58,16 @@ interface CiaWasm {
   inspect(specs: { id: string; rel_path: string; folder: string | null }[]): InputItem[];
   preview(req: PlanRequest): Plan;
   run(req: PlanRequest, onEvent: (e: EngineEvent) => void, cancel: Int32Array | undefined): JobSummary;
+  run_job(jobId: string, req: PlanRequest, onEvent: (e: EngineEvent) => void, cancel: Int32Array | undefined): JobSummary;
   job_log(jobId: string): string | undefined;
+  set_video_probe(id: string, probe: VideoProbe | null, canDecode: boolean): void;
+  has_video_probe(id: string): boolean;
+  set_video_result(id: string, result: VideoResultIn, bytes: Uint8Array | undefined): void;
+  clear_video_results(): void;
+  video_work(req: PlanRequest): VideoWork[];
+  plan_video(probe: VideoProbe, budget: Budget, target: Target, options: PlanOptions): PlanOut;
+  retry_video(plan: VideoPlan, actualBytes: number, budget: Budget): VideoPlan | null;
+  decide_video(probe: VideoProbe, hardBytes: number, sourceBytes: number, allowed: VideoFormat[]): Decision;
   list_outputs(): string[];
   take_output(path: string): Uint8Array<ArrayBuffer> | undefined;
   drop_outputs(): void;
@@ -49,7 +86,11 @@ export type Request =
   | { id: number; type: "remove_files"; ids: string[] }
   | { id: number; type: "inspect"; specs: { id: string; rel_path: string; folder: string | null }[] }
   | { id: number; type: "preview"; req: PlanRequest }
-  | { id: number; type: "run"; req: PlanRequest; cancel: Int32Array | null }
+  | { id: number; type: "run"; req: PlanRequest; cancel: Int32Array | null; jobId?: string }
+  | { id: number; type: "set_video_probes"; probes: { id: string; probe: VideoProbe | null; canDecode: boolean }[] }
+  | { id: number; type: "set_video_result"; handleId: string; result: VideoResultIn; bytes: Uint8Array | null }
+  | { id: number; type: "video_work"; req: PlanRequest }
+  | { id: number; type: "video_rpc"; name: VideoRpcName; args: unknown[] }
   | { id: number; type: "package_zip"; entries: ZipEntryIn[] }
   | { id: number; type: "job_log"; jobId: string }
   | { id: number; type: "version" }
@@ -167,9 +208,31 @@ async function handle(req: Request): Promise<unknown> {
       return (await loadWasm()).inspect(req.specs);
     case "preview":
       return (await loadWasm()).preview(req.req);
+    case "set_video_probes": {
+      const w = await loadWasm();
+      for (const p of req.probes) w.set_video_probe(p.id, p.probe, p.canDecode);
+      return null;
+    }
+    case "set_video_result": {
+      const w = await loadWasm();
+      w.set_video_result(req.handleId, req.result, req.bytes ?? undefined);
+      return null;
+    }
+    case "video_work":
+      return (await loadWasm()).video_work(req.req);
+    case "video_rpc": {
+      const w = await loadWasm();
+      switch (req.name) {
+        case "plan_video": return w.plan_video(...(req.args as [VideoProbe, Budget, Target, PlanOptions]));
+        case "retry_video": return w.retry_video(...(req.args as [VideoPlan, number, Budget]));
+        case "decide_video": return w.decide_video(...(req.args as [VideoProbe, number, number, VideoFormat[]]));
+      }
+      throw new Error(`unknown video rpc ${String(req.name)}`);
+    }
     case "run": {
       const w = await loadWasm();
-      const summary = w.run(req.req, (event) => ctx.postMessage({ type: "event", id: req.id, event } satisfies Reply), req.cancel ?? undefined);
+      const onEvent = (event: EngineEvent) => ctx.postMessage({ type: "event", id: req.id, event } satisfies Reply);
+      const summary = req.jobId ? w.run_job(req.jobId, req.req, onEvent, req.cancel ?? undefined) : w.run(req.req, onEvent, req.cancel ?? undefined);
       // Move outputs out of the engine's memory.
       const root = await opfsRoot();
       let storage: StorageMode = "memory";

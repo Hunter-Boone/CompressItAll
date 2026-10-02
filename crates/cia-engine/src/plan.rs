@@ -909,8 +909,29 @@ impl Engine {
             }
         };
         let encoder = video.encoder_kind(ctx.options.video.faster);
-        let target = video_target(&probe, ctx, allowed);
         let popts = plan_options(item, ctx);
+        let target = match video.check_support(
+            &item.source,
+            &probe,
+            video_target(&probe, ctx, allowed),
+            &allowed.video,
+            &popts,
+        ) {
+            Ok(t) => t,
+            Err((code, suggestions)) => {
+                return (
+                    Prediction {
+                        predicted_bytes: item.bytes,
+                        exact: false,
+                        summary: String::new(),
+                        quality: None,
+                        notes: vec![],
+                    },
+                    Strategy::None,
+                    Some(refuse(code, None, suggestions)),
+                )
+            }
+        };
         let Some(b) = budget else {
             let plan = cia_video_plan::plan(
                 &probe,

@@ -62,6 +62,8 @@ pub fn refusal_message(
         RefusalCode::UnsupportedInput { what } => {
             if what == "heic" {
                 "This browser can't open iPhone HEIC photos. Use Safari, or the desktop app.".to_string()
+            } else if what == "hdr" {
+                "This browser can't convert HDR video to standard colour. Use the desktop app.".to_string()
             } else {
                 format!("{BRAND} can't open this kind of file yet.")
             }

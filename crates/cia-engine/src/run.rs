@@ -7,7 +7,7 @@ use crate::log::JobLog;
 use crate::output::OutputDest;
 use crate::plan::{allowed_for, budgets, ctx_clone, PlanRequest};
 use crate::planners::{self, Ctx, Encoded, PlannerOutcome};
-use crate::{CancelToken, Engine, EngineError};
+use crate::{CancelToken, Engine, EngineError, VideoWork};
 use cia_core::events::{EngineEvent, EventSink};
 use cia_core::*;
 use std::sync::Mutex;
@@ -239,6 +239,12 @@ impl Engine {
                                 }]
                             }
                             RefusalCode::NeedsFfmpeg => vec![Suggestion::InstallFfmpeg],
+                            RefusalCode::BrowserLacksCodec { .. } => vec![
+                                Suggestion::UseOtherBrowser {
+                                    browser: "Chrome, Edge or Safari".into(),
+                                },
+                                Suggestion::UseDesktopApp,
+                            ],
                             _ => vec![],
                         };
                         (
@@ -1027,8 +1033,23 @@ impl Engine {
         let probe = video
             .probe(&item.source)
             .map_err(|_| EngineError::Damaged("video".into()))?;
-        let target = crate::plan::video_target(&probe, ctx, allowed);
         let popts = crate::plan::plan_options(item, ctx);
+        let target = match video.check_support(
+            &item.source,
+            &probe,
+            crate::plan::video_target(&probe, ctx, allowed),
+            &allowed.video,
+            &popts,
+        ) {
+            Ok(t) => t,
+            Err((code, _)) => {
+                return Ok(PlannerOutcome::Refused {
+                    code,
+                    smallest_bytes: None,
+                    attempts: vec![],
+                })
+            }
+        };
         let budget_s = budget.map(|b| {
             let hard = ctx.hard_bytes.unwrap_or(b);
             cia_video_plan::Budget {
@@ -1114,6 +1135,91 @@ impl Engine {
                 closest_bytes: None,
             }),
         }
+    }
+
+    /// The video items of `req` that `run` would hand to the backend, with the
+    /// budget, target and options it would use, so a host can transcode them
+    /// ahead of `run` (the web app, whose WebCodecs pipeline is asynchronous
+    /// and cannot be called from the synchronous runner). Items the backend
+    /// cannot probe or refuses in `check_support` are left out; `run` reports
+    /// those itself. Smaller mode gets the 60 percent budget the native
+    /// backend uses.
+    pub fn video_work(&self, req: &PlanRequest) -> Result<Vec<VideoWork>, EngineError> {
+        let Some(video) = &self.video else {
+            return Ok(vec![]);
+        };
+        let limit = req.goal.limit().cloned();
+        let allowed = allowed_for(&req.goal);
+        let smaller = match &req.goal {
+            Goal::Smaller { level } => Some(*level),
+            _ => None,
+        };
+        let cancel_fn = || false;
+        let noop = |_: f32, _: &str| {};
+        let base_ctx = Ctx {
+            options: &req.options,
+            allowed_image: allowed.image.clone(),
+            allowed_audio: allowed.audio.clone(),
+            allowed_animated: allowed.animated.clone(),
+            hard_bytes: limit.as_ref().map(|l| l.hard_bytes),
+            smaller,
+            cancel: &cancel_fn,
+            progress: &noop,
+        };
+        let (item_budgets, _) = budgets(self, req, &base_ctx)?;
+        let mut out = Vec::new();
+        for (item, budget) in req.items.iter().zip(item_budgets.iter()) {
+            if item.kind != Kind::Video
+                || item.detail.format == "corrupt"
+                || item.detail.format == "unreadable"
+            {
+                continue;
+            }
+            let Ok(probe) = video.probe(&item.source) else {
+                continue;
+            };
+            let hard = limit.as_ref().map(|l| l.hard_for(item.kind));
+            let ctx = Ctx {
+                hard_bytes: hard,
+                ..ctx_clone(&base_ctx)
+            };
+            let popts = crate::plan::plan_options(item, &ctx);
+            let Ok(target) = video.check_support(
+                &item.source,
+                &probe,
+                crate::plan::video_target(&probe, &ctx, &allowed),
+                &allowed.video,
+                &popts,
+            ) else {
+                continue;
+            };
+            let budget_s = match budget {
+                Some(b) => {
+                    let hard = hard.unwrap_or(*b);
+                    cia_video_plan::Budget {
+                        raw_budget_bytes: *b,
+                        hard_bytes: hard,
+                        safety_bytes: hard.saturating_sub(*b),
+                    }
+                }
+                None => cia_video_plan::Budget {
+                    raw_budget_bytes: item.bytes * 6 / 10,
+                    hard_bytes: item.bytes,
+                    safety_bytes: 0,
+                },
+            };
+            out.push(VideoWork {
+                item_id: item.id.clone(),
+                source: item.source.clone(),
+                budget: budget_s,
+                target,
+                options: popts,
+                faster: req.options.video.faster,
+                allowed: allowed.video.clone(),
+                hard_bytes: hard,
+            });
+        }
+        Ok(out)
     }
 
     #[allow(clippy::too_many_arguments)]

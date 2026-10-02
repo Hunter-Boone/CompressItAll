@@ -20,7 +20,14 @@
 use cia_core::events::{EngineEvent, EventSink};
 use cia_core::*;
 use cia_engine::inspect::InputSpec;
-use cia_engine::{CancelToken, Engine, EngineError, InputReader, OutputDest, OutputSink};
+use cia_engine::{
+    CancelToken, Engine, EngineError, InputReader, OutputDest, OutputSink, VideoBackend,
+    VideoTranscodeResult,
+};
+use cia_video_plan::{
+    AudioCodec, Budget, Container, Decision, EncoderKind, PlanOptions, PlanRefusal, Target,
+    VideoCodec, VideoPlan, VideoProbe,
+};
 use cia_wasm_libc as _;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -32,6 +39,8 @@ use wasm_bindgen::prelude::*;
 
 /// handle_id -> (file name, bytes)
 type FileMap = HashMap<String, (String, Rc<Vec<u8>>)>;
+/// `(probe, VideoDecoder takes the codec)`, or `Err` for a file mediabunny could not read.
+type ProbeEntry = Result<(VideoProbe, bool), ()>;
 
 thread_local! {
     static FILES: RefCell<FileMap> = RefCell::new(HashMap::new());
@@ -41,6 +50,14 @@ thread_local! {
     static CAPS: RefCell<Option<Capabilities>> = const { RefCell::new(None) };
     /// job_id -> job log JSON (kept for the session; DESIGN.md 3.12).
     static LOGS: RefCell<BTreeMap<String, String>> = const { RefCell::new(BTreeMap::new()) };
+    /// handle_id -> what the JS probe (mediabunny) found: the probe and whether
+    /// this browser's `VideoDecoder` takes the codec; `Err` when the file could
+    /// not be read (damaged).
+    static PROBES: RefCell<HashMap<String, ProbeEntry>> = RefCell::new(HashMap::new());
+    /// handle_id -> the finished WebCodecs transcode for the job about to run.
+    static VIDEO_RESULTS: RefCell<HashMap<String, VideoResultIn>> = RefCell::new(HashMap::new());
+    /// handle_id -> output bytes of that transcode, taken once by the sink.
+    static VIDEO_BYTES: RefCell<HashMap<String, Vec<u8>>> = RefCell::new(HashMap::new());
 }
 
 fn js_err(e: impl std::fmt::Display) -> JsError {
@@ -109,7 +126,8 @@ pub fn capabilities(web: JsValue) -> Result<JsValue, JsError> {
         opus_encode: false,
         mp3_encode: false,
         aac_encode: false,
-        video: false,
+        // 3.5.10: the pipeline needs one of the two encoders; the UI shows the 4.7 banner otherwise.
+        video: web.webcodecs && (web.h264_encode || web.vp9_encode),
         web: Some(web),
     };
     CAPS.with(|c| *c.borrow_mut() = Some(caps.clone()));
@@ -129,7 +147,12 @@ fn engine() -> Rc<Engine> {
                 host: "web".into(),
                 ..Default::default()
             });
-        let eng = Rc::new(Engine::new(Arc::new(WasmReader), Arc::new(WasmSink), caps));
+        let video = caps.video;
+        let mut eng = Engine::new(Arc::new(WasmReader), Arc::new(WasmSink), caps)
+            .with_video(Arc::new(WasmVideoBackend));
+        // `with_video` assumes a backend means video works; here the browser decides.
+        eng.caps.video = video;
+        let eng = Rc::new(eng);
         *e = Some(eng.clone());
         eng
     })
@@ -156,6 +179,9 @@ pub fn has_file(id: &str) -> bool {
 #[wasm_bindgen]
 pub fn remove_file(id: &str) {
     FILES.with(|f| f.borrow_mut().remove(id));
+    PROBES.with(|p| p.borrow_mut().remove(id));
+    VIDEO_RESULTS.with(|r| r.borrow_mut().remove(id));
+    VIDEO_BYTES.with(|b| b.borrow_mut().remove(id));
     // The preview cache holds encodes keyed by item id; drop it so memory follows the file.
     ENGINE.with(|e| {
         if let Some(eng) = e.borrow().as_ref() {
@@ -167,6 +193,8 @@ pub fn remove_file(id: &str) {
 #[wasm_bindgen]
 pub fn clear_files() {
     FILES.with(|f| f.borrow_mut().clear());
+    PROBES.with(|p| p.borrow_mut().clear());
+    clear_video_results();
     ENGINE.with(|e| {
         if let Some(eng) = e.borrow().as_ref() {
             eng.preview_cache.lock().unwrap().clear();
@@ -179,7 +207,8 @@ pub fn clear_files() {
 pub fn held_bytes() -> f64 {
     let files: usize = FILES.with(|f| f.borrow().values().map(|(_, b)| b.len()).sum());
     let outs: usize = OUTPUTS.with(|o| o.borrow().values().map(Vec::len).sum());
-    (files + outs) as f64
+    let video: usize = VIDEO_BYTES.with(|b| b.borrow().values().map(Vec::len).sum());
+    (files + outs + video) as f64
 }
 
 struct WasmReader;
@@ -256,6 +285,9 @@ fn loc_path(location: &OutputLocation) -> &str {
     path
 }
 
+/// Sink key under which a finished WebCodecs transcode is readable (handle id after the colon).
+const VIDEO_KEY: &str = "video:";
+
 impl OutputSink for WasmSink {
     fn exists(&self, dir: &str, file_name: &str) -> bool {
         OUTPUTS.with(|o| o.borrow().contains_key(&Self::key(dir, file_name)))
@@ -273,6 +305,14 @@ impl OutputSink for WasmSink {
     }
     fn len(&self, location: &OutputLocation) -> Result<u64, EngineError> {
         let path = loc_path(location);
+        if let Some(id) = path.strip_prefix(VIDEO_KEY) {
+            return VIDEO_BYTES.with(|b| {
+                b.borrow()
+                    .get(id)
+                    .map(|v| v.len() as u64)
+                    .ok_or_else(|| EngineError::Io(format!("{path} missing")))
+            });
+        }
         OUTPUTS.with(|o| {
             o.borrow()
                 .get(path)
@@ -282,6 +322,15 @@ impl OutputSink for WasmSink {
     }
     fn read(&self, location: &OutputLocation) -> Result<Vec<u8>, EngineError> {
         let path = loc_path(location);
+        if let Some(id) = path.strip_prefix(VIDEO_KEY) {
+            // The runner reads once and removes; hand the buffer over instead of copying it
+            // (a second copy of a large video would double the worker's memory).
+            return VIDEO_BYTES.with(|b| {
+                b.borrow_mut()
+                    .remove(id)
+                    .ok_or_else(|| EngineError::Io(format!("{path} missing")))
+            });
+        }
         OUTPUTS.with(|o| {
             o.borrow()
                 .get(path)
@@ -291,6 +340,10 @@ impl OutputSink for WasmSink {
     }
     fn remove(&self, location: &OutputLocation) {
         let path = loc_path(location);
+        if let Some(id) = path.strip_prefix(VIDEO_KEY) {
+            VIDEO_BYTES.with(|b| b.borrow_mut().remove(id));
+            return;
+        }
         OUTPUTS.with(|o| o.borrow_mut().remove(path));
     }
     fn make_dir(&self, dir: &str, sub: &str) -> Result<String, EngineError> {
@@ -439,6 +492,18 @@ pub fn run(
     on_event: js_sys::Function,
     cancel_flag: Option<js_sys::Int32Array>,
 ) -> Result<JsValue, JsError> {
+    run_job(&cia_core::new_id(), req, on_event, cancel_flag)
+}
+
+/// [`run`] with a job id the host chose, so it can tag the events of the
+/// video transcodes it ran ahead of the engine with the same id.
+#[wasm_bindgen]
+pub fn run_job(
+    job_id: &str,
+    req: JsValue,
+    on_event: js_sys::Function,
+    cancel_flag: Option<js_sys::Int32Array>,
+) -> Result<JsValue, JsError> {
     let req: cia_engine::PlanRequest = from_js(req)?;
     let cancel = match cancel_flag {
         Some(flag) => {
@@ -457,7 +522,9 @@ pub fn run(
         last_progress: RefCell::new(HashMap::new()),
     };
     drop_outputs();
-    let (mut summary, log) = engine().run(&req, &sink, &cancel);
+    let (mut summary, log) = engine().run_job(job_id, &req, &sink, &cancel);
+    // Whatever the runner did not consume (cancelled before the item) is not an output.
+    clear_video_results();
     let prefix = job_prefix(&summary.job_id);
     // The summary from `run` was built before the sink rewrote paths; redo it against the map.
     prefix_summary(&mut summary, &prefix);
@@ -479,6 +546,356 @@ pub fn run(
 #[wasm_bindgen]
 pub fn job_log(job_id: &str) -> Option<String> {
     LOGS.with(|l| l.borrow().get(job_id).cloned())
+}
+
+// ---------------------------------------------------------------------------
+// Video (DESIGN.md 3.5.10, docs/DECISIONS.md "web video split")
+//
+// WebCodecs is asynchronous and lives in JS, while the engine's runner is
+// synchronous. The host therefore probes every video with mediabunny and
+// registers the probe here (`set_video_probe`), and before `run_job` it
+// transcodes each video item the engine would have handed to a backend
+// (`video_work`) and registers the finished result (`set_video_result`).
+// `WasmVideoBackend` serves both back to the engine, which keeps planning,
+// naming, verification bookkeeping, packaging and the summary in Rust.
+
+/// A finished (or failed) WebCodecs transcode, as the video worker reports it.
+#[derive(Debug, Clone, Deserialize)]
+struct VideoResultIn {
+    #[serde(default)]
+    kept_original: bool,
+    #[serde(default)]
+    plan: Option<VideoPlan>,
+    #[serde(default)]
+    attempts: Vec<Attempt>,
+    #[serde(default)]
+    verification: Option<VerificationReport>,
+    /// "cancelled", "damaged", "refused", "over" or a failure code; None when the encode fit.
+    #[serde(default)]
+    error: Option<String>,
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    closest_bytes: Option<u64>,
+    #[serde(default)]
+    max_duration_ms: Option<u64>,
+}
+
+struct WasmVideoBackend;
+
+fn handle_of(source: &SourceRef) -> Option<&str> {
+    match source {
+        SourceRef::Handle { handle_id } => Some(handle_id),
+        SourceRef::Path { .. } => None,
+    }
+}
+
+impl VideoBackend for WasmVideoBackend {
+    fn probe(&self, source: &SourceRef) -> Result<VideoProbe, EngineError> {
+        let id = handle_of(source).ok_or_else(|| EngineError::Unsupported("path".into()))?;
+        PROBES.with(|p| match p.borrow().get(id) {
+            Some(Ok((probe, _))) => Ok(probe.clone()),
+            Some(Err(())) => Err(EngineError::Damaged("video".into())),
+            None => Err(EngineError::Unsupported("not probed yet".into())),
+        })
+    }
+
+    fn check_support(
+        &self,
+        source: &SourceRef,
+        probe: &VideoProbe,
+        target: Target,
+        allowed: &[cia_core::presets::VideoFormat],
+        options: &PlanOptions,
+    ) -> Result<Target, (RefusalCode, Vec<Suggestion>)> {
+        let web = CAPS
+            .with(|c| c.borrow().as_ref().and_then(|c| c.web.clone()))
+            .unwrap_or_default();
+        let browser = || {
+            vec![
+                Suggestion::UseOtherBrowser {
+                    browser: "Chrome, Edge or Safari".into(),
+                },
+                Suggestion::UseDesktopApp,
+            ]
+        };
+        let can_decode = handle_of(source)
+            .and_then(|id| {
+                PROBES.with(|p| {
+                    p.borrow()
+                        .get(id)
+                        .and_then(|r| r.as_ref().ok().map(|(_, d)| *d))
+                })
+            })
+            .unwrap_or(false);
+        if !can_decode {
+            return Err((
+                RefusalCode::BrowserLacksCodec {
+                    codec: probe.video_codec.clone(),
+                },
+                browser(),
+            ));
+        }
+        // 3.5.10 step 4: tone-mapping only on browsers the HDR fixture has verified.
+        if probe.is_hdr && !web.hdr_verified {
+            return Err((
+                RefusalCode::UnsupportedInput { what: "hdr".into() },
+                vec![Suggestion::UseDesktopApp],
+            ));
+        }
+        let has_audio =
+            !probe.audio.is_empty() && !matches!(options.audio, AudioTrackChoice::Remove);
+        let video_ok = |c: VideoCodec| match c {
+            VideoCodec::H264 => web.h264_encode,
+            VideoCodec::Vp9 => web.vp9_encode,
+            VideoCodec::Av1 => false,
+        };
+        let audio_ok = |c: AudioCodec| {
+            !has_audio
+                || match c {
+                    AudioCodec::Aac => web.aac_encode,
+                    AudioCodec::Opus => web.opus_encode,
+                }
+        };
+        if video_ok(target.video_codec) && audio_ok(target.audio_codec) {
+            return Ok(target);
+        }
+        // No AAC encoder (Chrome on Linux) but Opus: keep the preferred video codec and
+        // container. Opus in MP4 is valid ISO BMFF, and a preset that lists an Opus format
+        // accepts Opus sound.
+        if video_ok(target.video_codec)
+            && target.container == Container::Mp4
+            && has_audio
+            && web.opus_encode
+            && allowed.iter().any(|f| f.audio.eq_ignore_ascii_case("opus"))
+        {
+            return Ok(Target {
+                audio_codec: AudioCodec::Opus,
+                ..target
+            });
+        }
+        // The preset's other formats, in its order (H.264 missing -> VP9 WebM, 3.5.6 step 5).
+        for f in allowed {
+            if let Some(t) = Target::from_format(f, &target.caps) {
+                if video_ok(t.video_codec) && audio_ok(t.audio_codec) {
+                    return Ok(t);
+                }
+            }
+        }
+        let missing = if video_ok(target.video_codec) {
+            target.audio_codec.token()
+        } else {
+            target.video_codec.token()
+        };
+        Err((
+            RefusalCode::BrowserLacksCodec {
+                codec: missing.to_string(),
+            },
+            browser(),
+        ))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn transcode(
+        &self,
+        source: &SourceRef,
+        _probe: &VideoProbe,
+        _budget: Option<Budget>,
+        _target: Target,
+        _options: &PlanOptions,
+        _faster: bool,
+        _dest: &OutputDest,
+        _progress: &dyn Fn(f32, Option<u64>),
+        cancel: &CancelToken,
+    ) -> Result<VideoTranscodeResult, EngineError> {
+        let id = handle_of(source).ok_or_else(|| EngineError::Unsupported("path".into()))?;
+        let r = VIDEO_RESULTS
+            .with(|r| r.borrow_mut().remove(id))
+            .ok_or_else(|| EngineError::Other("video result missing".into()))?;
+        if cancel.is_cancelled() {
+            return Err(EngineError::Cancelled);
+        }
+        match r.error.as_deref() {
+            None => {}
+            Some("cancelled") => return Err(EngineError::Cancelled),
+            Some("damaged") => return Err(EngineError::Damaged(r.message.unwrap_or_default())),
+            Some("refused") => {
+                return Err(EngineError::Other(format!(
+                    "refused:{}",
+                    r.max_duration_ms.unwrap_or(0)
+                )))
+            }
+            Some("over") => {
+                return Err(EngineError::Other(format!(
+                    "over:{}",
+                    r.closest_bytes.unwrap_or(0)
+                )))
+            }
+            Some(code) => {
+                return Err(EngineError::Other(format!(
+                    "{code}: {}",
+                    r.message.unwrap_or_default()
+                )))
+            }
+        }
+        let bytes = VIDEO_BYTES.with(|b| b.borrow().get(id).map(|v| v.len() as u64));
+        if r.kept_original {
+            return Ok(VideoTranscodeResult {
+                location: OutputLocation::Opfs {
+                    path: format!("source:{id}"),
+                },
+                file_name: String::new(),
+                bytes: bytes.unwrap_or(0),
+                plan: r.plan,
+                attempts: r.attempts,
+                verification: VerificationReport {
+                    size_ok: true,
+                    decodes: true,
+                    checks: vec!["original kept".into()],
+                    failures: vec![],
+                },
+                kept_original: true,
+            });
+        }
+        let bytes = bytes.ok_or_else(|| EngineError::Other("video output missing".into()))?;
+        let plan = r.plan.ok_or_else(|| EngineError::Other("no plan".into()))?;
+        Ok(VideoTranscodeResult {
+            location: OutputLocation::Opfs {
+                path: format!("{VIDEO_KEY}{id}"),
+            },
+            file_name: String::new(),
+            bytes,
+            plan: Some(plan),
+            attempts: r.attempts,
+            verification: r.verification.unwrap_or_default(),
+            kept_original: false,
+        })
+    }
+
+    fn encoder_kind(&self, _faster: bool) -> EncoderKind {
+        EncoderKind::WebCodecs
+    }
+
+    fn capabilities(&self) -> Option<FfmpegCapabilities> {
+        None
+    }
+}
+
+/// Register what mediabunny found for the file under `id`: the `VideoProbe`
+/// (null when the file could not be read) and whether `VideoDecoder` takes
+/// its codec. Must happen before `inspect`, `preview` or `run` see the item.
+#[wasm_bindgen]
+pub fn set_video_probe(id: &str, probe: JsValue, can_decode: bool) -> Result<(), JsError> {
+    let entry = if probe.is_null() || probe.is_undefined() {
+        Err(())
+    } else {
+        Ok((from_js::<VideoProbe>(probe)?, can_decode))
+    };
+    PROBES.with(|p| p.borrow_mut().insert(id.to_string(), entry));
+    Ok(())
+}
+
+#[wasm_bindgen]
+pub fn has_video_probe(id: &str) -> bool {
+    PROBES.with(|p| p.borrow().contains_key(id))
+}
+
+/// Register the finished transcode of the file under `id` for the next
+/// `run_job`. `bytes` are the output (absent for kept originals and failures).
+#[wasm_bindgen]
+pub fn set_video_result(
+    id: &str,
+    result: JsValue,
+    bytes: Option<js_sys::Uint8Array>,
+) -> Result<(), JsError> {
+    let r: VideoResultIn = from_js(result)?;
+    VIDEO_RESULTS.with(|m| m.borrow_mut().insert(id.to_string(), r));
+    VIDEO_BYTES.with(|b| {
+        let mut b = b.borrow_mut();
+        match bytes {
+            Some(arr) => {
+                b.insert(id.to_string(), arr.to_vec());
+            }
+            None => {
+                b.remove(id);
+            }
+        }
+    });
+    Ok(())
+}
+
+#[wasm_bindgen]
+pub fn clear_video_results() {
+    VIDEO_RESULTS.with(|r| r.borrow_mut().clear());
+    VIDEO_BYTES.with(|b| b.borrow_mut().clear());
+}
+
+/// The video items of a request with the budget, target and options the
+/// engine would use (`cia_engine::VideoWork[]`), for the host to transcode
+/// before `run_job`.
+#[wasm_bindgen]
+pub fn video_work(req: JsValue) -> Result<JsValue, JsError> {
+    let req: cia_engine::PlanRequest = from_js(req)?;
+    let work = engine().video_work(&req).map_err(js_err)?;
+    to_js(&work)
+}
+
+#[derive(Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum PlanOut {
+    Plan { plan: VideoPlan },
+    Refusal { refusal: PlanRefusal },
+}
+
+/// `cia_video_plan::plan` with the WebCodecs margin (0.92): `{type:"plan", plan}`
+/// or `{type:"refusal", refusal}`.
+#[wasm_bindgen]
+pub fn plan_video(
+    probe: JsValue,
+    budget: JsValue,
+    target: JsValue,
+    options: JsValue,
+) -> Result<JsValue, JsError> {
+    let probe: VideoProbe = from_js(probe)?;
+    let budget: Budget = from_js(budget)?;
+    let target: Target = from_js(target)?;
+    let options: PlanOptions = from_js(options)?;
+    let out = match cia_video_plan::plan(&probe, &budget, &target, EncoderKind::WebCodecs, &options)
+    {
+        Ok(plan) => PlanOut::Plan { plan },
+        Err(refusal) => PlanOut::Refusal { refusal },
+    };
+    to_js(&out)
+}
+
+/// Next attempt after an encode came out at `actual_bytes` (3.5.8, hardware
+/// factor 0.93); null when no rung is left.
+#[wasm_bindgen]
+pub fn retry_video(plan: JsValue, actual_bytes: f64, budget: JsValue) -> Result<JsValue, JsError> {
+    let plan: VideoPlan = from_js(plan)?;
+    let budget: Budget = from_js(budget)?;
+    let next =
+        cia_video_plan::retry_scale(&plan, actual_bytes as u64, &budget, EncoderKind::WebCodecs);
+    to_js(&next)
+}
+
+/// Keep, remux or encode (`cia_video_plan::keep_original_or_remux`).
+#[wasm_bindgen]
+pub fn decide_video(
+    probe: JsValue,
+    hard_bytes: f64,
+    source_bytes: f64,
+    allowed: JsValue,
+) -> Result<JsValue, JsError> {
+    let probe: VideoProbe = from_js(probe)?;
+    let allowed: Vec<cia_core::presets::VideoFormat> = from_js(allowed)?;
+    let d: Decision = cia_video_plan::keep_original_or_remux(
+        &probe,
+        hard_bytes as u64,
+        source_bytes as u64,
+        &allowed,
+    );
+    to_js(&d)
 }
 
 // ---------------------------------------------------------------------------

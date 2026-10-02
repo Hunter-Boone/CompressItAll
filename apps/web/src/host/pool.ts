@@ -32,6 +32,8 @@ export class EngineWorker {
   private seq = 1;
   /** ids of input files this worker holds bytes for */
   readonly files = new Set<string>();
+  /** handle ids whose video probe this worker has been given */
+  readonly probes = new Set<string>();
   readonly ready: Promise<Capabilities>;
   busy = 0;
   dead = false;

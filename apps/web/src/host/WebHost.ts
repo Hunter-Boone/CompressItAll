@@ -4,6 +4,15 @@
  * outputs live in OPFS under /jobs/<job_id>/ and leave as downloads or, on
  * Chromium, through the File System Access API. Settings, the license token
  * and the free allowance are in IndexedDB.
+ *
+ * Video (DESIGN.md 3.5.10, docs/DECISIONS.md "web video split"): WebCodecs is
+ * asynchronous, the engine's runner is not. Video items are probed in the
+ * video worker after the engine has detected them, the probe is handed to the
+ * engine so `preview` plans them like any other item, and `run` transcodes
+ * them in the video worker first, registers the results with the engine, and
+ * only then runs the engine, which names, verifies, packages and summarises
+ * everything in one `JobSummary`. The UI sees one Plan, one job, one stream of
+ * events.
  */
 import { get, set } from "idb-keyval";
 import type {
@@ -21,10 +30,13 @@ import type {
   Plan,
   WebCapabilities,
 } from "@cia/engine-client";
+import type { VideoProbe } from "@cia/engine-client";
+import { encoderSupport, isHdrVerified } from "@cia/webvideo";
 import engineVersion from "../engine-version.json";
 import { EngineWorkerError, WorkerPool, type EngineWorker } from "./pool";
 import { LicenseClient, browserName } from "./license";
-import type { FileIn, RunResult, ZipEntryIn } from "../workers/engine.worker";
+import { VideoClient } from "./video";
+import type { FileIn, RunResult, VideoRpcName, VideoWork, ZipEntryIn } from "../workers/engine.worker";
 
 const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "0.1.0";
 const KEY_SETTINGS = "cia.settings";
@@ -42,26 +54,39 @@ function newId(): string {
 }
 
 async function probeWebCaps(): Promise<WebCapabilities> {
-  const w = window as Window & { VideoEncoder?: { isConfigSupported(c: object): Promise<{ supported?: boolean }> }; AudioEncoder?: { isConfigSupported(c: object): Promise<{ supported?: boolean }> }; showDirectoryPicker?: unknown };
-  const sup = async (p: Promise<{ supported?: boolean }> | undefined) => {
-    try { return !!(await p)?.supported; } catch { return false; }
-  };
-  const video = (codec: string) => w.VideoEncoder ? sup(w.VideoEncoder.isConfigSupported({ codec, width: 1920, height: 1080, bitrate: 5_000_000, framerate: 30 })) : Promise.resolve(false);
-  const audio = (codec: string) => w.AudioEncoder ? sup(w.AudioEncoder.isConfigSupported({ codec, sampleRate: 48_000, numberOfChannels: 2, bitrate: 128_000 })) : Promise.resolve(false);
-  const [h264, vp9, aac, opus] = await Promise.all([video("avc1.640028"), video("vp09.00.40.08"), audio("mp4a.40.2"), audio("opus")]);
+  const w = window as Window & { showDirectoryPicker?: unknown };
+  const enc = await encoderSupport();
   const nav = navigator as Navigator & { storage?: { getDirectory?: unknown } };
+  const browser = browserName();
   return {
     cross_origin_isolated: window.crossOriginIsolated === true,
-    webcodecs: !!w.VideoEncoder,
-    h264_encode: h264,
-    vp9_encode: vp9,
-    aac_encode: aac,
-    opus_encode: opus,
-    hdr_verified: false,
+    webcodecs: enc.webcodecs,
+    h264_encode: enc.h264,
+    vp9_encode: enc.vp9,
+    aac_encode: enc.aac,
+    opus_encode: enc.opus,
+    hdr_verified: isHdrVerified(browser, browserMajorVersion()),
     directory_picker: typeof w.showDirectoryPicker === "function",
     opfs: typeof nav.storage?.getDirectory === "function",
-    browser: browserName(),
+    browser,
   };
+}
+
+function browserMajorVersion(): number {
+  const m = /(?:Edg|OPR|Chrome|Chromium|Firefox|Version)\/(\d+)/.exec(navigator.userAgent);
+  return m ? Number(m[1]) : 0;
+}
+
+/** Fill the `KindDetail` fields `cia_engine::inspect` fills from a backend probe. */
+function applyProbe(item: InputItem, probe: VideoProbe) {
+  item.detail.duration_ms = probe.duration_ms;
+  item.detail.width = probe.display_w;
+  item.detail.height = probe.display_h;
+  item.detail.fps = probe.avg_fps;
+  item.detail.video_codec = probe.video_codec;
+  item.detail.is_hdr = probe.is_hdr;
+  item.detail.rotation_degrees = probe.rotation_degrees;
+  item.detail.audio_streams = probe.audio.map((a) => ({ index: a.index, codec: a.codec, channels: a.channels, sample_rate: a.sample_rate, bitrate_bps: a.bitrate_bps, title: a.title }));
 }
 
 async function opfsRoot(): Promise<FileSystemDirectoryHandle | null> {
@@ -119,11 +144,22 @@ export class WebHost implements EngineHost {
   private cancelFlags = new Map<string, Int32Array>();
   private lic = new LicenseClient();
   private lastJobId: string | null = null;
+  /** item id -> mediabunny probe (null: damaged or no video track) */
+  private probes = new Map<string, { probe: VideoProbe; canDecode: boolean } | null>();
+  private video = new VideoClient((name, args) => this.videoRpc(name, args));
+  /** The job in flight and which half of it is running, for cancel. */
+  private active: { jobId: string; phase: "video" | "engine"; cancelled: boolean } | null = null;
 
   constructor() {
     this.webCaps = probeWebCaps();
     this.pool = this.webCaps.then((web) => new WorkerPool(web));
     void this.cleanOldJobs();
+  }
+
+  private async videoRpc(name: VideoRpcName, args: unknown[]): Promise<unknown> {
+    const w = (await this.pool).job();
+    await w.ready;
+    return w.call({ type: "video_rpc", name, args });
   }
 
   async capabilities(): Promise<Capabilities> {
@@ -159,7 +195,35 @@ export class WebHost implements EngineHost {
       }
       this.items.set(item.id, item);
     }
+    // Videos: the engine detected them; mediabunny reads what the planner needs (3.5.1).
+    for (const item of items) {
+      if (item.kind !== "video" || item.detail.format === "corrupt" || item.detail.format === "unreadable") continue;
+      const file = this.heldFor(item.id)?.file;
+      if (!file) continue;
+      const r = await this.video.probe(file).catch(() => null);
+      if (r) {
+        this.probes.set(item.id, { probe: r.probe, canDecode: r.canDecode });
+        applyProbe(item, r.probe);
+      } else {
+        this.probes.set(item.id, null);
+        item.detail.format = "corrupt";
+      }
+    }
     return items;
+  }
+
+  /** Hand a worker the probes of the video items it is about to plan or run. */
+  private async ensureProbes(w: EngineWorker, ids: string[]) {
+    const probes: { id: string; probe: VideoProbe | null; canDecode: boolean }[] = [];
+    for (const id of ids) {
+      const handle = this.handleId(id);
+      if (w.probes.has(handle) || !this.probes.has(id)) continue;
+      const p = this.probes.get(id);
+      probes.push({ id: handle, probe: p?.probe ?? null, canDecode: p?.canDecode ?? false });
+    }
+    if (!probes.length) return;
+    await w.call({ type: "set_video_probes", probes });
+    for (const p of probes) w.probes.add(p.id);
   }
 
   private async expand(src: InputSource): Promise<Held[]> {
@@ -233,7 +297,9 @@ export class WebHost implements EngineHost {
     this.held.delete(itemId);
     this.held.delete(handle);
     this.items.delete(itemId);
-    void this.pool.then((p) => { for (const w of p.all()) { w.files.delete(handle); w.files.delete(itemId); void w.call({ type: "remove_files", ids: [handle] }).catch(() => {}); } });
+    this.probes.delete(itemId);
+    this.video.release(itemId);
+    void this.pool.then((p) => { for (const w of p.all()) { w.files.delete(handle); w.files.delete(itemId); w.probes.delete(handle); void w.call({ type: "remove_files", ids: [handle] }).catch(() => {}); } });
   }
 
   // ---- plan and run ------------------------------------------------------------
@@ -242,7 +308,9 @@ export class WebHost implements EngineHost {
     const pool = await this.pool;
     const w = pool.job();
     await w.ready;
-    await this.ensureFiles(w, req.items.map((i) => i.id));
+    const ids = req.items.map((i) => i.id);
+    await this.ensureFiles(w, ids);
+    await this.ensureProbes(w, ids);
     return w.call<Plan>({ type: "preview", req });
   }
 
@@ -250,39 +318,52 @@ export class WebHost implements EngineHost {
     const pool = await this.pool;
     const w = pool.job();
     await w.ready;
-    await this.ensureFiles(w, req.items.map((i) => i.id));
+    const ids = req.items.map((i) => i.id);
+    await this.ensureFiles(w, ids);
+    await this.ensureProbes(w, ids);
     const shared = typeof SharedArrayBuffer === "function" && window.crossOriginIsolated ? new Int32Array(new SharedArrayBuffer(4)) : null;
-    const pending = `pending_${Date.now()}`;
-    let jobId = pending;
-    if (shared) this.cancelFlags.set(pending, shared);
+    const jobId = `job_${newId().slice(2)}`;
+    if (shared) this.cancelFlags.set(jobId, shared);
+    const active = { jobId, phase: "video" as "video" | "engine", cancelled: false };
+    this.active = active;
     const started = Date.now();
-    const done = w.call<RunResult>({ type: "run", req, cancel: shared }, (e) => {
-      if (jobId === pending) {
-        jobId = e.job_id;
-        if (shared) { this.cancelFlags.set(jobId, shared); this.cancelFlags.delete(pending); }
+    const done = (async () => {
+      // 1. Video items first, in the video worker (WebCodecs), results registered with the engine.
+      const work = await w.call<VideoWork[]>({ type: "video_work", req });
+      if (work.length) onEvent({ type: "job_state", job_id: jobId, state: "running" });
+      for (const item of work) {
+        if (active.cancelled) break;
+        const file = this.heldFor(item.item_id)?.file;
+        const probe = this.probes.get(item.item_id)?.probe;
+        if (!file || !probe) continue;
+        const r = await this.video.runItem({ jobId, itemId: item.item_id, file, probe, work: item, sourceBytes: file.size }, onEvent);
+        await w.call({ type: "set_video_result", handleId: this.handleId(item.item_id), result: r.result, bytes: r.bytes }, undefined, r.bytes ? [r.bytes.buffer] : []);
       }
-      onEvent(e);
-    }).then(async (r) => {
+      if (active.cancelled && !shared) return this.cancelledSummary(req, jobId, started);
+      // 2. Everything else, plus naming, verification bookkeeping, packaging and the summary.
+      active.phase = "engine";
+      const r = await w.call<RunResult>({ type: "run", req, cancel: shared, jobId }, onEvent);
       for (const [path, blob] of Object.entries(r.blobs)) this.blobs.set(path, blob);
       this.remember(r.summary);
       await this.recordJob(r.summary.job_id);
       if ((await this.lic.info()).status !== "pro") await this.consumeAllowance(r.summary);
       return r.summary;
+    })().then((summary) => {
+      if (summary.verdict === "cancelled" && !this.active?.cancelled) return summary;
+      return summary;
     }, (err: unknown) => {
       const crashed = err instanceof EngineWorkerError && err.fatal;
       const message = crashed ? "Smidge ran out of memory on this file. Try the desktop app." : `Something went wrong: ${err instanceof Error ? err.message : String(err)}`;
-      const summary = this.failedSummary(req, jobId === pending ? `job_${started.toString(36)}` : jobId, message, started);
+      const summary = active.cancelled ? this.cancelledSummary(req, jobId, started) : this.failedSummary(req, jobId, message, started);
       onEvent({ type: "job_done", job_id: summary.job_id, summary });
       return summary;
-    }).finally(() => { this.cancelFlags.delete(jobId); this.cancelFlags.delete(pending); });
-    // Wait for the engine's job id (first event) so the handle carries it.
-    const handle = await new Promise<JobHandle>((resolve) => {
-      const tick = () => { if (jobId !== pending) resolve({ jobId, done }); else setTimeout(tick, 5); };
-      tick();
-      void done.then(() => resolve({ jobId, done }));
+    }).finally(() => {
+      this.cancelFlags.delete(jobId);
+      if (this.active === active) this.active = null;
+      void w.call({ type: "set_video_result", handleId: "", result: {}, bytes: null }).catch(() => {});
     });
-    this.lastJobId = handle.jobId;
-    return handle;
+    this.lastJobId = jobId;
+    return { jobId, done };
   }
 
   private failedSummary(req: PlanRequest, jobId: string, message: string, started: number): JobSummary {
@@ -300,6 +381,20 @@ export class WebHost implements EngineHost {
     };
   }
 
+  private cancelledSummary(req: PlanRequest, jobId: string, started: number): JobSummary {
+    const summary: JobSummary = {
+      job_id: jobId,
+      outcomes: req.items.map((i) => [i.id, { type: "cancelled" }]),
+      packaged: null,
+      input_bytes: req.items.reduce((a, i) => a + i.bytes, 0n),
+      total_bytes: 0n,
+      verdict: "cancelled",
+      headline: "Stopped. Nothing was saved.",
+      elapsed_ms: BigInt(Date.now() - started),
+    };
+    return summary;
+  }
+
   private remember(summary: JobSummary) {
     this.artifacts.clear();
     for (const [, o] of summary.outcomes) if (o.type === "fitted" || o.type === "kept_original") this.artifacts.set(o.artifact.id, o.artifact);
@@ -309,7 +404,14 @@ export class WebHost implements EngineHost {
   async cancel(jobId: string): Promise<void> {
     const flag = this.cancelFlags.get(jobId) ?? [...this.cancelFlags.values()][0];
     if (flag) Atomics.store(flag, 0, 1);
-    else (await this.pool).restartJobWorker(); // no SharedArrayBuffer: stop the worker outright
+    const active = this.active;
+    if (active && active.jobId === jobId) {
+      active.cancelled = true;
+      await this.video.cancel().catch(() => {});
+      if (!flag && active.phase === "engine") (await this.pool).restartJobWorker(); // no SharedArrayBuffer: stop the worker outright
+    } else if (!flag) {
+      (await this.pool).restartJobWorker();
+    }
   }
 
   // ---- outputs -------------------------------------------------------------------
@@ -364,6 +466,11 @@ export class WebHost implements EngineHost {
       }
     } : undefined,
     openExternal: async (url: string) => { window.open(url, "_blank", "noopener"); },
+    previewFrame: async (itemId: string, ms: number) => {
+      const file = this.heldFor(itemId)?.file;
+      if (!file || this.items.get(itemId)?.kind !== "video") return null;
+      return this.video.frame(itemId, file, Math.max(0, Math.round(ms))).catch(() => null);
+    },
   };
 
   // ---- settings, license, allowance -----------------------------------------------

@@ -149,7 +149,11 @@ impl Engine {
                                 })
                                 .collect();
                         }
-                        Err(_) => item.detail.format = "corrupt".into(),
+                        // A backend that has not looked at this file yet (the web host probes
+                        // after detection) leaves the detail empty; only a real read failure
+                        // marks the file damaged.
+                        Err(EngineError::Damaged(_)) => item.detail.format = "corrupt".into(),
+                        Err(_) => {}
                     }
                 }
             }
