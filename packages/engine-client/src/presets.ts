@@ -1,5 +1,5 @@
 import presetsJson from "@cia/presets";
-import type { Preset, PresetFile, ResolvedLimit } from "./generated";
+import type { Preset, PresetFile, PresetLimit, ResolvedLimit } from "./generated";
 
 export const PRESET_FILE = presetsJson as unknown as PresetFile;
 export const PRESETS: Preset[] = [...PRESET_FILE.presets].sort((a, b) => a.order - b.order);
@@ -48,7 +48,8 @@ export function resolvePreset(p: Preset): ResolvedLimit {
   if (!p.limit) throw new Error(`preset ${p.id} has no limit`);
   const raw = rawBudget(Number(p.limit.bytes), p.limit.counts, Number(p.limit.safety_bytes));
   const byKind: Record<string, { hard_bytes: bigint; raw_budget_bytes: bigint; safety_bytes: bigint }> = {};
-  for (const [k, l] of Object.entries(p.limit_by_kind ?? {})) {
+  for (const [k, l] of Object.entries(p.limit_by_kind ?? {}) as [string, PresetLimit | undefined][]) {
+    if (!l) continue;
     byKind[k] = {
       hard_bytes: l.bytes,
       raw_budget_bytes: BigInt(rawBudget(Number(l.bytes), l.counts, Number(l.safety_bytes))),

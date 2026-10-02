@@ -5,6 +5,7 @@ import { useHost } from "../host/HostContext";
 import { useStore } from "../state/store";
 import { Wordmark } from "./Header";
 import { Modal, Spinner } from "./primitives";
+import { normalise as normaliseKey } from "@cia/api-types/product-key";
 
 export function WelcomeCard({ onTour, onSkip }: { onTour: () => void; onSkip: () => void }) {
   return (
@@ -77,23 +78,7 @@ export function UpgradeModal() {
   );
 }
 
-/** Normalise + Luhn mod 31 check, mirroring cia-license (shared vectors in packages/api-types). */
-const CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-export function normaliseKey(input: string): string | null {
-  const s = input.toUpperCase().replace(/[\s-]/g, "");
-  if (s.length !== 20) return null;
-  for (const c of s) if (!CHARS.includes(c)) return null;
-  const n = CHARS.length;
-  let sum = 0, factor = 2;
-  for (let i = s.length - 2; i >= 0; i--) {
-    let add = CHARS.indexOf(s[i]!) * factor;
-    factor = factor === 2 ? 1 : 2;
-    add = Math.floor(add / n) + (add % n);
-    sum += add;
-  }
-  const check = (n - (sum % n)) % n;
-  return CHARS[check] === s[19] ? s : null;
-}
+export { normalise as normaliseKey } from "@cia/api-types/product-key";
 export function formatKey(input: string): string {
   const s = input.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
   return s.replace(/(.{5})(?=.)/g, "$1-");

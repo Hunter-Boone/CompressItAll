@@ -1,13 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "noEmit": false,
+    "noEmit": true,
     "types": [
       "vite/client"
-    ],
-    "composite": true,
-    "emitDeclarationOnly": true,
-    "outDir": "dist/types"
+    ]
   },
   "include": [
     "src"

@@ -93,6 +93,8 @@ export class MockHost implements EngineHost {
     this.settings = JSON.parse(localStorage.getItem("cia.mock.settings") ?? "{}");
     this.lic = this.opts.pro ? { status: "pro", plan: "lifetime", key4: "7KQ2P", keyMasked: "ABCDE-…-7KQ2P", devicesUsed: 1, devicesMax: 3 } : { status: "free" };
     (window as unknown as { __mockHost: MockHost }).__mockHost = this;
+    this.ffmpegSetup = this.buildFfmpegSetup();
+    this.updates = this.kind === "desktop" ? { check: async () => ({ available: false }), install: async () => {} } : undefined;
   }
 
   async capabilities(): Promise<Capabilities> {
@@ -281,7 +283,7 @@ export class MockHost implements EngineHost {
   }
 
   private artifact(item: InputItem, bytes: number, p: ItemPlan, ext: string, kept: boolean): import("./generated").Artifact {
-    const stem = (item.rel_path.split(/[\/\\]/).pop() ?? item.rel_path).replace(/\.[^.]+$/, "");
+    const stem = (item.rel_path.split(/[/\\]/).pop() ?? item.rel_path).replace(/\.[^.]+$/, "");
     const name = kept ? item.rel_path : `${stem} (${"Discord"}).${ext}`;
     return { id: nextId(), item_id: item.id, location: this.kind === "desktop" ? { type: "path", path: `/Users/mock/${name}` } : { type: "opfs", path: `/jobs/x/${name}` }, file_name: name, bytes: BigInt(bytes), format: ext || item.detail.format, summary: p.prediction.summary, quality: p.prediction.quality, verification: { size_ok: true, decodes: true, checks: ["size read back", "decoded with a second decoder"], failures: [] } };
   }
@@ -322,7 +324,9 @@ export class MockHost implements EngineHost {
     const remaining = Math.max(0, 3 - this.uses.length);
     return { remaining, nextFreeAtMs: remaining === 0 ? this.uses[0]! + 86_400_000 : null };
   }
-  ffmpegSetup = this.kind === "desktop" ? {
+  ffmpegSetup: EngineHost["ffmpegSetup"];
+  updates: EngineHost["updates"];
+  private buildFfmpegSetup(): EngineHost["ffmpegSetup"] { return this.kind === "desktop" ? {
     manifest: async () => ({ version: "7.1.2", bytes: 35_651_584, unpackedBytes: 94_371_840 }),
     install: async (onProgress: (p: import("./host").FfmpegSetupProgress) => void) => {
       for (let i = 0; i <= 10; i++) { await sleep(150); onProgress({ phase: "downloading", downloadedBytes: i * 3_565_158, totalBytes: 35_651_584 }); }
@@ -335,8 +339,7 @@ export class MockHost implements EngineHost {
     remove: async () => { this.opts.ffmpegInstalled = false; },
     retest: async () => { await sleep(500); },
     cancel: async () => {},
-  } : undefined;
-  updates = this.kind === "desktop" ? { check: async () => ({ available: false }), install: async () => {} } : undefined;
+  } : undefined; }
   diagnostics = { copyReport: async () => {}, openLogs: async () => {}, jobLog: async () => null };
   async version() { return { app: "0.1.0-mock", build: "dev", engine: "mock" }; }
 }

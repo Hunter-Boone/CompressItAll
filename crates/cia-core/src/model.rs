@@ -78,7 +78,6 @@ pub struct ResolvedLimit {
     pub safety_bytes: u64,
     pub scope: LimitScope,
     pub max_files_per_message: Option<u32>,
-    #[ts(type = "Record<string, ResolvedKindLimit>")]
     pub by_kind: BTreeMap<LimitKind, ResolvedKindLimit>,
     /// Human label used in file names: "Discord", "Email", "Custom 8 MB".
     pub output_label: String,

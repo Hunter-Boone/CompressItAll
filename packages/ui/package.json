@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "main": "src/index.ts",
-  "exports": { ".": "./src/index.ts", "./styles.css": "./src/index.css", "./tailwind.config": "./tailwind.config.cjs" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./styles.css": "./src/index.css",
+    "./tailwind.config": "./tailwind.config.cjs"
+  },
   "dependencies": {
     "@cia/brand": "*",
     "@cia/engine-client": "*",
@@ -15,7 +19,8 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@cia/api-types": "*"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

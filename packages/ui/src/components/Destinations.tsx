@@ -1,4 +1,4 @@
-import { Briefcase, ChevronDown, Mail, MessageCircle, MessageSquare, Minimize2, Ruler, Send, Slack, Users, Video } from "lucide-react";
+import { Briefcase, ChevronDown, Hash, Mail, MessageCircle, MessageSquare, Minimize2, Ruler, Send, Users, Video } from "lucide-react";
 import { clsx } from "clsx";
 import { useEffect, useRef, useState } from "react";
 import { presetGroups, presetById, type Preset, type PresetGroup } from "@cia/engine-client";
@@ -13,7 +13,7 @@ function icon(name: string) {
     case "briefcase": return <Briefcase size={s} />;
     case "whatsapp": return <MessageCircle size={s} />;
     case "message": return <MessageCircle size={s} />;
-    case "slack": return <Slack size={s} />;
+    case "slack": return <Hash size={s} />;
     case "teams": return <Users size={s} />;
     case "telegram": return <Send size={s} />;
     case "ruler": return <Ruler size={s} />;

@@ -100,7 +100,6 @@ pub struct Preset {
     #[serde(default)]
     pub limit: Option<PresetLimit>,
     #[serde(default)]
-    #[ts(type = "Record<string, PresetLimit>")]
     pub limit_by_kind: BTreeMap<LimitKind, PresetLimit>,
     #[serde(default)]
     pub max_files_per_message: Option<u32>,
