@@ -67,6 +67,7 @@ pub trait VideoBackend: Send + Sync {
         budget: Option<cia_video_plan::Budget>,
         target: cia_video_plan::Target,
         options: &cia_video_plan::PlanOptions,
+        allowed: &[cia_core::presets::VideoFormat],
         faster: bool,
         dest: &OutputDest,
         progress: &dyn Fn(f32, Option<u64>),

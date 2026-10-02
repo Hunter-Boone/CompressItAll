@@ -65,6 +65,7 @@ impl VideoBackend for FfmpegBackend {
         budget: Option<cia_video_plan::Budget>,
         target: cia_video_plan::Target,
         options: &cia_video_plan::PlanOptions,
+        allowed: &[cia_core::presets::VideoFormat],
         faster: bool,
         dest: &OutputDest,
         progress: &dyn Fn(f32, Option<u64>),
@@ -77,14 +78,16 @@ impl VideoBackend for FfmpegBackend {
             hard_bytes: source_bytes,
             safety_bytes: 0,
         });
-        let encoders = self.report.chain(faster, Self::allowed_webm(&target));
+        // WebM is a fallback only when the destination accepts it (DESIGN 3.5.6 step 5).
+        let allow_webm =
+            Self::allowed_webm(&target) || allowed.iter().any(|f| f.container == "webm");
+        let encoders = self.report.chain(faster, allow_webm);
         let sink_dir = if dest.dir.is_empty() {
             std::env::temp_dir()
         } else {
             PathBuf::from(&dest.dir)
         };
         let stem = format!(".smidge-video-{}", cia_core::new_id());
-        let allowed: Vec<cia_core::presets::VideoFormat> = vec![];
         let req = CompressRequest {
             item_id: String::new(),
             input: &input,
@@ -94,7 +97,7 @@ impl VideoBackend for FfmpegBackend {
             target: &target,
             options,
             encoders: &encoders,
-            allowed_formats: &allowed,
+            allowed_formats: allowed,
             sink_dir: &sink_dir,
             output_stem: &stem,
             max_size_attempts: 4,

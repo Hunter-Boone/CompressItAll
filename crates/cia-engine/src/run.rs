@@ -1054,6 +1054,7 @@ impl Engine {
             budget_s,
             target,
             &popts,
+            &allowed.video,
             ctx.options.video.faster,
             &dest,
             &progress,
@@ -1108,11 +1109,32 @@ impl Engine {
                 message: None,
                 closest_bytes: m.trim_start_matches("over:").parse().ok(),
             }),
-            Err(e) => Ok(PlannerOutcome::Failed {
-                code: "encoder_stalled",
-                message: Some(e.to_string()),
-                closest_bytes: None,
-            }),
+            Err(EngineError::Other(m)) => {
+                // The backend reports "<code>: <message>"; keep the code when it is one we know.
+                let (code, rest) = m.split_once(": ").unwrap_or(("encoder_crash", m.as_str()));
+                let code: &'static str = match code {
+                    "encoder_stalled" => "encoder_stalled",
+                    "over_after_retries" => "over_after_retries",
+                    "damaged_input" | "damaged_video" => "damaged_video",
+                    "disk_full" => "disk_full",
+                    "not_writable" => "not_writable",
+                    _ => "encoder_crash",
+                };
+                log::warn!("video backend failed: {m}");
+                Ok(PlannerOutcome::Failed {
+                    code,
+                    message: Some(rest.to_string()),
+                    closest_bytes: None,
+                })
+            }
+            Err(e) => {
+                log::warn!("video backend error: {e}");
+                Ok(PlannerOutcome::Failed {
+                    code: "encoder_crash",
+                    message: Some(e.to_string()),
+                    closest_bytes: None,
+                })
+            }
         }
     }
 
