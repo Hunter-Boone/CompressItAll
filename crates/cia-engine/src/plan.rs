@@ -70,9 +70,22 @@ pub(crate) fn item_sizes(engine: &Engine, item: &InputItem, ctx: &Ctx) -> Sizes 
             }
         }
         Kind::Audio => {
+            // "Lossless" for allocation means the best quality we would want: the top rung of an
+            // allowed lossy format when the source must be converted, otherwise the original bytes.
             let dur_s = item.detail.duration_ms.unwrap_or(10_000) as f64 / 1000.0;
+            let codec = item
+                .detail
+                .audio_streams
+                .first()
+                .map(|a| a.codec.as_str())
+                .unwrap_or("");
+            let allowed_as_is = ctx
+                .allowed_audio
+                .iter()
+                .any(|f| f == native_audio_id(codec));
+            let top = ((192_000.0 * dur_s) / 8.0) as u64 + 4096;
             Sizes {
-                lossless: original,
+                lossless: if allowed_as_is { original } else { top },
                 floor: ((32_000.0 * dur_s) / 8.0) as u64,
             }
         }
