@@ -48,7 +48,9 @@ def main():
     if a.action == "sync":
         return subprocess.call(["bash", str(LAB / "scripts" / "sync-checkout.sh"), a.machine, a.repo, "compressitall"])
     if a.machine == "windows":
-        pw = lambda c: f'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "{c}"'
+        # Tools installed by choco in a previous session are not on the SSH session's PATH yet.
+        prefix = "$env:PATH += ';C:\\Program Files\\CMake\\bin;C:\\Python313;C:\\Python313\\Scripts;C:\\Python312;C:\\Python312\\Scripts;C:\\Program Files\\NASM'; "
+        pw = lambda c: f'powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "{prefix}{c}"'
         if a.action == "build":
             return ssh(a.machine, pw(f"cd {rd}; cargo build -p cia-cli --release --locked; if (Test-Path apps/desktop/src-tauri) {{ cargo build -p cia-desktop --locked }}")).returncode
         if a.action == "test":
