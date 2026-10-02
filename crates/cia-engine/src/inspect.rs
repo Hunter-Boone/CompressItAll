@@ -112,11 +112,7 @@ impl Engine {
                                         codec: info.codec.clone(),
                                         channels: ch as u32,
                                         sample_rate: sr,
-                                        bitrate_bps: if dur > 0 {
-                                            Some(bytes * 8 * 1000 / dur)
-                                        } else {
-                                            None
-                                        },
+                                        bitrate_bps: (bytes * 8 * 1000).checked_div(dur),
                                         title: None,
                                     }];
                                 }
