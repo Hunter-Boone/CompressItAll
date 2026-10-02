@@ -152,6 +152,9 @@ jobs:
       - name: Create DRAFT release in the Downloads repo
         env:
           GH_TOKEN: ${{ secrets.DOWNLOADS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_TOKEN: ${{ secrets.DOWNLOADS_REPO_TOKEN != '' }}
         run: |
           V="${GITHUB_REF_NAME#v}"; [ -n "${{ github.event.inputs.version }}" ] && V="${{ github.event.inputs.version }}"
-          gh release create "v$V" --repo "$DOWNLOADS_REPO" --draft --title "Smidge $V" --notes "Draft. Promote with promote.yml after the lab smoke test." release/* || gh release upload "v$V" --repo "$DOWNLOADS_REPO" --clobber release/*
+          # Without a fine-grained token for the Downloads repo (DESIGN 5.13), draft into this repo so the pipeline stays testable.
+          REPO="$DOWNLOADS_REPO"; [ "$HAS_TOKEN" = "true" ] || { REPO="${{ github.repository }}"; echo "::warning::DOWNLOADS_REPO_TOKEN not set; drafting into $REPO"; }
+          gh release create "v$V" --repo "$REPO" --draft --title "Smidge $V" --notes "Draft. Promote with promote.yml after the lab smoke test." release/* || gh release upload "v$V" --repo "$REPO" --clobber release/*
