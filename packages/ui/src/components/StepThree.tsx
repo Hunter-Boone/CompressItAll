@@ -62,6 +62,7 @@ function ArtifactActions({ artifacts, single }: { artifacts: Artifact[]; single:
 
 export default function StepThree({ onCompress, onCancel, onSuggestion, canCompress, blockedReason }: { onCompress: () => void; onCancel: () => void; onSuggestion: (s: Suggestion) => void; canCompress: boolean; blockedReason: string | null }) {
   const { state, dispatch } = useStore();
+  const { settings, updateSettings } = useHost();
   const { phase, plan, summary, progress, items, destination, jobStartedAt } = state;
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -86,7 +87,14 @@ export default function StepThree({ onCompress, onCancel, onSuggestion, canCompr
       body = (
         <div className="flex flex-col gap-3">
           <p className="m-0 text-base" data-testid="prediction">{plan.headline}</p>
-          {plan.packaging.type === "archive" && <p className="m-0 text-xs text-on-surface-muted">These will go into one zip file: {plan.packaging.file_name}</p>}
+          {destination?.type === "preset" && presetById(destination.presetId)?.limit?.scope === "per_message" && items.length > 1 && items.length <= 10 && (
+            <div className="flex items-center gap-2 text-xs" data-testid="send-as">
+              <span className="text-on-surface-muted">Send as:</span>
+              <button className={clsx("rounded-pill px-3 py-1", settings.packaging !== "zip" ? "bg-primary-container text-primary-container-foreground" : "hover:bg-surface-hover")} onClick={() => updateSettings({ packaging: "separate_files" })}>{items.length} separate files</button>
+              <button className={clsx("rounded-pill px-3 py-1", settings.packaging === "zip" ? "bg-primary-container text-primary-container-foreground" : "hover:bg-surface-hover")} onClick={() => updateSettings({ packaging: "zip" })}>1 zip file</button>
+            </div>
+          )}
+          {plan.packaging.type === "archive" && <p className="m-0 text-xs text-on-surface-muted">{items.length > 10 && destination?.type === "preset" ? `${presetById(destination.presetId)?.tile_label ?? "This app"} takes 10 files per message, so these ${items.length} files go into one zip: ${plan.packaging.file_name}` : `These will go into one zip file: ${plan.packaging.file_name}`}</p>}
           {plan.items.flatMap((p) => p.prediction.notes).slice(0, 3).map((n, i) => <p key={i} className="m-0 text-xs text-warning">{n}</p>)}
           {blockedReason && <p className="m-0 text-xs text-warning">{blockedReason}</p>}
         </div>
