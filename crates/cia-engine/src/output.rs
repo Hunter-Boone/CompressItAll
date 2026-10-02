@@ -14,6 +14,9 @@ pub struct OutputDest {
 }
 
 pub trait OutputSink: Send + Sync {
+    /// Called once at the start of every job with its id, so a sink shared by
+    /// several jobs can name its partial files after the right one.
+    fn begin_job(&self, _job_id: &str) {}
     /// True when a file with this name already exists in `dir`.
     fn exists(&self, dir: &str, file_name: &str) -> bool;
     /// Atomic no-overwrite write. Returns the final location.
@@ -104,14 +107,17 @@ pub mod fs_sink {
     use std::path::{Path, PathBuf};
 
     pub struct FsSink {
-        pub job_id: String,
+        job_id: Mutex<String>,
     }
 
     impl FsSink {
         pub fn new(job_id: &str) -> Self {
             Self {
-                job_id: job_id.to_string(),
+                job_id: Mutex::new(job_id.to_string()),
             }
+        }
+        pub fn job_id(&self) -> String {
+            self.job_id.lock().unwrap().clone()
         }
         /// Remove `.smidge-*.partial` files older than one hour in `dir`.
         pub fn clean_partials(dir: &Path) {
@@ -134,6 +140,9 @@ pub mod fs_sink {
     }
 
     impl OutputSink for FsSink {
+        fn begin_job(&self, job_id: &str) {
+            *self.job_id.lock().unwrap() = job_id.to_string();
+        }
         fn exists(&self, dir: &str, file_name: &str) -> bool {
             Path::new(dir).join(file_name).exists()
         }
@@ -145,7 +154,7 @@ pub mod fs_sink {
                 .rsplit_once('.')
                 .map(|(s, _)| s.to_string())
                 .unwrap_or(dest.file_name.clone());
-            let tmp = dir.join(format!(".{}.smidge-{}.partial", stem, self.job_id));
+            let tmp = dir.join(format!(".{}.smidge-{}.partial", stem, self.job_id()));
             {
                 let mut f = fs::File::create(&tmp).map_err(|e| map_io(&e, "not_writable"))?;
                 f.write_all(bytes).map_err(|e| {

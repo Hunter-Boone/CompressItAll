@@ -27,8 +27,21 @@ impl Engine {
         events: &dyn EventSink,
         cancel: &CancelToken,
     ) -> (JobSummary, JobLog) {
+        self.run_job(&cia_core::new_id(), req, events, cancel)
+    }
+
+    /// [`Engine::run`] with a job id chosen by the host, so it can hand the id to
+    /// its UI (and match cancel requests) before the first event arrives.
+    pub fn run_job(
+        &self,
+        job_id: &str,
+        req: &PlanRequest,
+        events: &dyn EventSink,
+        cancel: &CancelToken,
+    ) -> (JobSummary, JobLog) {
         let started = crate::now_ms();
-        let job_id = cia_core::new_id();
+        let job_id = job_id.to_string();
+        self.sink.begin_job(&job_id);
         let job = Job {
             id: job_id.clone(),
             items: req.items.clone(),

@@ -1,0 +1,53 @@
+[package]
+name = "cia-desktop"
+description = "Smidge desktop app: the engine inside a Tauri 2 window (DESIGN.md M3, 4.x, 5.5, 6.3)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "cia_desktop"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "smidge"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+cia-core = { path = "../../../crates/cia-core" }
+cia-engine = { path = "../../../crates/cia-engine", features = ["fs", "opus", "ffmpeg"] }
+cia-ffmpeg = { path = "../../../crates/cia-ffmpeg" }
+cia-license = { path = "../../../crates/cia-license", features = ["native"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-log = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-drag = { version = "2", optional = true }
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+base64.workspace = true
+getrandom = { version = "0.3", default-features = false, features = ["std"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls", "json"] }
+clipboard-rs = "0.3"
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+url = "2"
+
+[features]
+default = ["drag"]
+# Serve the embedded `dist/` instead of the Vite dev server. `tauri build` turns it on;
+# a plain `cargo build` needs it too when the binary should run without `npm run dev:frontend`.
+custom-protocol = ["tauri/custom-protocol"]
+# OS drag-out of result files through tauri-plugin-drag (DESIGN.md 4.3).
+drag = ["dep:tauri-plugin-drag"]
+# Development build: identifier app.smidge.desktop.dev (tauri.conf.dev.json), console on Windows,
+# and the `debug_add_paths` test hook.
+dev-build = []
+# End-to-end build: trusts the test license key and the debug hooks.
+e2e = ["dev-build", "cia-license/e2e"]

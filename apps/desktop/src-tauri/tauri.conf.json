@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Smidge",
+  "version": "0.1.0",
+  "identifier": "app.smidge.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev:frontend",
+    "devUrl": "http://localhost:5183",
+    "beforeBuildCommand": "npm run build:frontend",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Smidge",
+        "width": 1040,
+        "height": 720,
+        "minWidth": 760,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost; object-src 'none'; base-uri 'self'; frame-ancestors 'none'",
+      "assetProtocol": { "enable": false, "scope": [] }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "windows": { "installMode": "passive" },
+      "endpoints": [
+        "https://raw.githubusercontent.com/Hunter-Boone/Smidge-Downloads/main/channels/stable.tauri.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEU3RjdEQkNDMzcyQ0Y0MkIKUldRcjlDdzN6TnYzNXo3NUUvTUVhajJKQjluc08xZDk4ZWh0aEw5aGtUVHpOTk1abXJEUVlmMGQK"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": { "nsis": { "displayLanguageSelector": false } },
+    "linux": { "deb": { "depends": [] } }
+  }
+}

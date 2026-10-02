@@ -5,11 +5,12 @@
   "description": "Smidge monorepo: shared UI, web app, desktop app, site",
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "apps/*",
+    "e2e"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
-    "typecheck": "for p in packages/api-types packages/engine-client packages/ui apps/web apps/site; do echo \"== $p\"; npx tsc -p $p/tsconfig.json --noEmit || exit 1; done",
+    "typecheck": "for p in packages/api-types packages/engine-client packages/ui apps/web apps/desktop apps/site; do echo \"== $p\"; npx tsc -p $p/tsconfig.json --noEmit || exit 1; done",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "licenses:npm": "license-checker-rseidelsohn --production --json --excludePrivatePackages"

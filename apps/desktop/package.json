@@ -1,0 +1,36 @@
+{
+  "name": "@cia/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "build:debug": "tauri build --debug --no-bundle",
+    "build:dev": "tauri build --config src-tauri/tauri.conf.dev.json --features dev-build",
+    "build:frontend": "vite build",
+    "dev:frontend": "vite --port 5183 --strictPort",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@cia/brand": "*",
+    "@cia/engine-client": "*",
+    "@cia/ui": "*",
+    "@crabnebula/tauri-plugin-drag": "^2.1.0",
+    "@tauri-apps/api": "^2.12.1",
+    "@tauri-apps/plugin-dialog": "^2.8.1",
+    "@tauri-apps/plugin-opener": "^2.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.12.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.14",
+    "vite": "^7.0.0"
+  }
+}

@@ -2,10 +2,10 @@
 resolver = "2"
 members = [
   "crates/*",
+  "apps/desktop/src-tauri",
   "xtask",
 ]
-# apps/desktop/src-tauri joins the workspace in M3 (it needs the GTK/WebKit build deps the wasm job does not have)
-exclude = ["apps/desktop/src-tauri", "target"]
+exclude = ["target"]
 
 [workspace.package]
 version = "0.1.0"
@@ -40,6 +40,16 @@ strip = true
 
 # C codecs at opt-level 0 are unusably slow in tests
 [profile.dev.package."*"]
+opt-level = 2
+# The image search runs real encodes at preview time; at opt-level 0 a 12 MP photo
+# takes a minute per pass in the desktop debug build, at 2 it takes seconds.
+[profile.dev.package.cia-core]
+opt-level = 2
+[profile.dev.package.cia-image]
+opt-level = 2
+[profile.dev.package.cia-mozjpeg]
+opt-level = 2
+[profile.dev.package.cia-webp]
 opt-level = 2
 
 [profile.release.package."cia-wasm"]

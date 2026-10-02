@@ -142,12 +142,24 @@ fn fixtures(args: &[String]) -> Result<()> {
     run(&mut cmd)
 }
 
+/// Builds only `-p cia-wasm`: the workspace also holds `cia-desktop`, whose
+/// Tauri build needs the GTK/WebKit dev packages the wasm CI job does not have,
+/// so nothing here may build or test the whole workspace.
 fn wasm(args: &[String]) -> Result<()> {
-    let mut cmd = Command::new("bash");
-    cmd.current_dir(root())
-        .arg("tools/build-wasm.sh")
-        .args(args);
-    run(&mut cmd)
+    let script = root().join("tools/build-wasm.sh");
+    if script.exists() {
+        let mut cmd = Command::new("bash");
+        cmd.current_dir(root()).arg(script).args(args);
+        return run(&mut cmd);
+    }
+    run(Command::new("cargo").current_dir(root()).args([
+        "build",
+        "-p",
+        "cia-wasm",
+        "--target",
+        "wasm32-unknown-unknown",
+        "--release",
+    ]))
 }
 
 fn licenses() -> Result<()> {
