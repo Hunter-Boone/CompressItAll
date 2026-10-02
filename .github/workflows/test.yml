@@ -65,8 +65,19 @@ jobs:
         os: [ubuntu-22.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90  # Windows: ~49 min compile+tests, 8 min release CLI build, then the cache save
+    env:
+      # CI never reads line tables; dropping them keeps the test binaries and link memory small.
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          # The 14 GB ubuntu runner fills up linking this workspace's test binaries; ld then dies with a bus error.
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          sudo docker image prune --all --force >/dev/null 2>&1 || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.98.1
