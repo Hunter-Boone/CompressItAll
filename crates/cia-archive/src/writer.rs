@@ -121,6 +121,27 @@ impl<W: Write> ArchiveWriter<W> {
         Ok(())
     }
 
+    /// Add a regular file that must be stored uncompressed (method 0) in a
+    /// zip, whatever deflate would have saved. ODF and EPUB packages need
+    /// this for their `mimetype` entry, which readers locate by offset. The
+    /// other containers have no per-entry method, so this behaves like
+    /// [`ArchiveWriter::add_entry`] for them.
+    pub fn add_entry_stored(&mut self, name: &str, bytes: &[u8]) -> Result<(), ArchiveError> {
+        check_entry_name(name)?;
+        if name.ends_with('/') {
+            return Err(ArchiveError::InvalidName(name.to_owned()));
+        }
+        match &mut self.inner {
+            Inner::Zip(z) => {
+                let crc = crc32fast::hash(bytes);
+                z.write_entry(name, METHOD_STORED, crc, bytes.len() as u64, bytes, false)?;
+                self.count += 1;
+                Ok(())
+            }
+            _ => self.add_entry(name, bytes),
+        }
+    }
+
     /// Add an explicit directory entry. A trailing `/` is added if missing.
     /// Not needed for files inside directories; use it to keep empty folders
     /// when repacking an archive.
@@ -173,8 +194,12 @@ impl<W: Write> ArchiveWriter<W> {
 }
 
 /// Pick the on-disk method and bytes for one zip entry: zopfli below the
-/// threshold, zlib-rs level 9 above it, stored when deflate saves under 1%.
-pub(crate) fn zip_compress(bytes: &[u8], options: &ArchiveOptions) -> (u16, Vec<u8>) {
+/// threshold, zlib-rs level 9 above it, stored when deflate saves under 1%
+/// (DESIGN.md 3.9.2). Returns `(method, data)` ready for
+/// [`crate::zipfmt::ZipWriter::write_entry`]; callers that need to measure
+/// an entry before deciding the archive layout (the Office planner's fixed
+/// bytes, DESIGN.md 3.8 step 3) can compress once and write the result.
+pub fn zip_compress(bytes: &[u8], options: &ArchiveOptions) -> (u16, Vec<u8>) {
     if bytes.is_empty() {
         return (METHOD_STORED, Vec::new());
     }
