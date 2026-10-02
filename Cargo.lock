@@ -1092,16 +1092,6 @@ name = "cia-wasm-libc"
 version = "0.1.0"
 
 [[package]]
-name = "cia-wasm-spike"
-version = "0.1.0"
-dependencies = [
- "cia-mozjpeg",
- "cia-wasm-libc",
- "cia-webp",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "cia-webp"
 version = "0.1.0"
 dependencies = [
