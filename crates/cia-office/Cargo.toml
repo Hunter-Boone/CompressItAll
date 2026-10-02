@@ -1,0 +1,21 @@
+[package]
+name = "cia-office"
+description = "Smidge Office document planner: docx/docm, pptx/pptm, xlsx/xlsm, odt/odp/ods and epub. Recompresses embedded media and the ZIP container, never edits document XML. Bytes in, bytes out."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+cia-archive = { path = "../cia-archive", default-features = false }
+thiserror.workspace = true
+image.workspace = true
+quick-xml = "0.39"
+crc32fast = "1.5"
+
+[dev-dependencies]
+flate2 = { version = "1.1", default-features = false, features = ["zlib-rs"] }

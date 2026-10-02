@@ -49,7 +49,7 @@ pub mod fs;
 pub use reader::{
     open, open_with_limit, verify, Archive, ArchiveEntry, ArchiveFormat, VerifyReport,
 };
-pub use writer::ArchiveWriter;
+pub use writer::{zip_compress, ArchiveWriter};
 pub use zipfmt::zip_predicted_size;
 
 /// Output container formats (DESIGN.md 3.9.2 table).

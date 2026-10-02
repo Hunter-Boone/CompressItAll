@@ -541,6 +541,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cia-office"
+version = "0.1.0"
+dependencies = [
+ "cia-archive",
+ "cia-core",
+ "crc32fast",
+ "flate2",
+ "image",
+ "quick-xml 0.39.4",
+ "thiserror",
+]
+
+[[package]]
 name = "cia-pdf"
 version = "0.1.0"
 dependencies = [
@@ -1851,7 +1864,7 @@ dependencies = [
  "log",
  "miniz_oxide 0.8.9",
  "paste",
- "quick-xml",
+ "quick-xml 0.37.5",
 ]
 
 [[package]]
@@ -2342,6 +2355,15 @@ name = "quick-xml"
 version = "0.37.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "331e97a1af0bf59823e6eadffe373d7b27f485be8748f71471c662c1f269b7fb"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.39.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdcc8dd4e2f670d309a5f0e83fe36dfdc05af317008fea29144da1a2ac858e5e"
 dependencies = [
  "memchr",
 ]
