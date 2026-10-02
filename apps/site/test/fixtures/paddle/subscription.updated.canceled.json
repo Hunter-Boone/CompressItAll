@@ -1,0 +1,49 @@
+{
+  "event_id": "evt_01test_canceled",
+  "event_type": "subscription.canceled",
+  "occurred_at": "2027-11-05T09:00:00Z",
+  "notification_id": "ntf_01test",
+  "data": {
+    "id": "sub_01test_yearly",
+    "status": "canceled",
+    "customer_id": "ctm_01test_jayden",
+    "address_id": "add_01test",
+    "business_id": null,
+    "currency_code": "USD",
+    "created_at": "2026-10-02T11:58:00Z",
+    "updated_at": "2026-10-02T12:05:00Z",
+    "started_at": "2026-10-02T11:58:00Z",
+    "first_billed_at": "2026-10-02T11:58:00Z",
+    "next_billed_at": null,
+    "paused_at": null,
+    "canceled_at": "2027-11-05T09:00:00Z",
+    "collection_mode": "automatic",
+    "billing_details": null,
+    "current_billing_period": null,
+    "billing_cycle": {
+      "interval": "year",
+      "frequency": 1
+    },
+    "scheduled_change": null,
+    "management_urls": {
+      "update_payment_method": "https://sandbox-customer-portal.paddle.com/x",
+      "cancel": "https://sandbox-customer-portal.paddle.com/y"
+    },
+    "items": [
+      {
+        "status": "active",
+        "quantity": 1,
+        "price": {
+          "id": "pri_01test_yearly",
+          "product_id": "pro_01test",
+          "trial_period": {
+            "interval": "day",
+            "frequency": 0
+          }
+        }
+      }
+    ],
+    "custom_data": null,
+    "discount": null
+  }
+}
