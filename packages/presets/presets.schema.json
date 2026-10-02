@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smidge.example/presets.schema.json",
+  "title": "Smidge destination presets",
+  "type": "object",
+  "required": ["schema_version", "presets"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "const": 1 },
+    "presets": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/preset" } }
+  },
+  "$defs": {
+    "kind": { "enum": ["image", "video", "audio", "document", "other"] },
+    "limit": {
+      "type": "object",
+      "required": ["bytes", "stated_as", "scope", "counts", "safety_bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "bytes": { "type": "integer", "minimum": 1 },
+        "stated_as": { "type": "string" },
+        "scope": { "enum": ["per_file", "per_message"] },
+        "counts": { "enum": ["raw", "mime_base64"] },
+        "safety_bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "video_format": {
+      "type": "object",
+      "required": ["container", "video", "audio"],
+      "additionalProperties": false,
+      "properties": {
+        "container": { "enum": ["mp4", "webm"] },
+        "video": { "enum": ["h264", "vp9", "av1"] },
+        "audio": { "enum": ["aac", "opus"] }
+      }
+    },
+    "preset": {
+      "type": "object",
+      "required": ["id", "group", "tile_label", "output_label", "icon", "order", "mode"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "group": { "type": "string" },
+        "tile_label": { "type": "string" },
+        "tier_label": { "type": "string" },
+        "tier_summary": { "type": "string" },
+        "output_label": { "type": "string" },
+        "icon": { "type": "string" },
+        "order": { "type": "integer" },
+        "mode": { "enum": ["fit", "smaller", "custom"] },
+        "default_tier": { "type": "boolean" },
+        "note": { "type": "string" },
+        "limit": { "$ref": "#/$defs/limit" },
+        "limit_by_kind": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "image": { "$ref": "#/$defs/limit" },
+            "video": { "$ref": "#/$defs/limit" },
+            "audio": { "$ref": "#/$defs/limit" },
+            "document": { "$ref": "#/$defs/limit" },
+            "other": { "$ref": "#/$defs/limit" }
+          }
+        },
+        "max_files_per_message": { "type": "integer", "minimum": 1 },
+        "formats": {
+          "type": "object",
+          "required": ["image", "animated", "video", "audio", "document"],
+          "additionalProperties": false,
+          "properties": {
+            "image": { "type": "array", "items": { "enum": ["jpeg", "png", "webp", "gif", "avif"] } },
+            "animated": { "type": "array", "items": { "enum": ["gif", "webp", "mp4"] } },
+            "video": { "type": "array", "items": { "$ref": "#/$defs/video_format" } },
+            "audio": { "type": "array", "items": { "enum": ["mp3", "ogg_opus", "m4a_aac", "flac", "wav"] } },
+            "document": { "enum": ["keep"] }
+          }
+        },
+        "video_caps": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "max_short_edge": { "type": "integer" },
+            "max_fps": { "type": "integer" }
+          }
+        },
+        "source": {
+          "type": "object",
+          "required": ["urls", "checked_on", "confidence"],
+          "additionalProperties": false,
+          "properties": {
+            "urls": { "type": "array", "items": { "type": "string", "format": "uri" } },
+            "checked_on": { "type": "string", "format": "date" },
+            "confidence": { "enum": ["official", "third_party", "community"] },
+            "note": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

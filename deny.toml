@@ -1,0 +1,65 @@
+# cargo-deny: every crate that ships in the desktop binary or the WASM engine
+# must be commercially redistributable. GPL/LGPL/AGPL/SSPL fail the build.
+[graph]
+targets = [
+  { triple = "x86_64-unknown-linux-gnu" },
+  { triple = "x86_64-pc-windows-msvc" },
+  { triple = "aarch64-apple-darwin" },
+  { triple = "x86_64-apple-darwin" },
+  { triple = "wasm32-unknown-unknown" },
+]
+all-features = false
+
+[advisories]
+version = 2
+ignore = []
+
+[licenses]
+version = 2
+allow = [
+  "MIT",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "0BSD",
+  "BSL-1.0",
+  "Unicode-3.0",
+  "Unicode-DFS-2016",
+  "CC0-1.0",
+  "IJG",
+  "OFL-1.1",
+  "MPL-2.0",
+  "bzip2-1.0.6",
+  "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.8
+exceptions = []
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+wildcards = "allow"
+deny = [
+  # GPL / AGPL / SSPL and anything that would pull them in
+  { crate = "imagequant", reason = "GPL-3.0; use quantette" },
+  { crate = "imagequant-sys", reason = "GPL-3.0" },
+  { crate = "dssim", reason = "AGPL-3.0; use ssimulacra2" },
+  { crate = "dssim-core", reason = "AGPL-3.0" },
+  { crate = "mp3lame-encoder", reason = "LGPL statically linked" },
+  { crate = "mp3lame-sys", reason = "LGPL statically linked" },
+  { crate = "lame-sys", reason = "LGPL statically linked" },
+  { crate = "ffmpeg-sys-next", reason = "FFmpeg must run as a separate process" },
+  { crate = "ffmpeg-next", reason = "FFmpeg must run as a separate process" },
+  { crate = "libheif-rs", reason = "LGPL + HEVC patents" },
+  { crate = "libheif-sys", reason = "LGPL + HEVC patents" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

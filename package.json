@@ -1,0 +1,30 @@
+{
+  "name": "compressitall",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Smidge monorepo: shared UI, web app, desktop app, site",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc -b tsconfig.json",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "licenses:npm": "license-checker-rseidelsohn --production --json --excludePrivatePackages"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8",
+    "eslint": "^9.14.0",
+    "@eslint/js": "^9.14.0",
+    "typescript-eslint": "^8.15.0",
+    "license-checker-rseidelsohn": "^4.4.2",
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/*",
+  "xtask",
+]
+# apps/desktop/src-tauri joins the workspace in M3 (it needs the GTK/WebKit build deps the wasm job does not have)
+exclude = ["apps/desktop/src-tauri", "target"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "LicenseRef-Proprietary"
+publish = false
+authors = ["Hunter Boone"]
+repository = "https://github.com/Hunter-Boone/CompressItAll"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+log = "0.4"
+ulid = { version = "1", default-features = false }
+sha2 = "0.10"
+base64 = "0.22"
+ts-rs = { version = "10", features = ["serde-compat", "no-serde-warnings"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp", "tiff", "ico", "qoi", "pnm"] }
+infer = "0.16"
+rayon = "1"
+getrandom = { version = "0.3", features = ["wasm_js"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+strip = true
+
+# C codecs at opt-level 0 are unusably slow in tests
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release.package."cia-wasm"]
+opt-level = "s"

@@ -1,0 +1,27 @@
+{
+  "name": "Smidge",
+  "wordmark": "smidge",
+  "tagline": "Make any file small enough to send.",
+  "promise": "Drop it in, pick where it's going, and Smidge makes it fit. If it can't, Smidge tells you why and what will work.",
+  "pro_name": "Smidge Pro",
+  "code_prefix": "cia",
+  "accent": "#6D4AFF",
+  "accent_hover": "#7F60FF",
+  "accent_pressed": "#5A37EE",
+  "domain_placeholder": "smidge.example",
+  "urls": {
+    "site": "https://www.smidge.example",
+    "app": "https://app.smidge.example",
+    "api": "https://www.smidge.example/api/v1",
+    "downloads_repo": "https://github.com/Hunter-Boone/Smidge-Downloads",
+    "libraries_repo": "https://github.com/Hunter-Boone/Smidge-Libraries",
+    "support_email": "support@smidge.example"
+  },
+  "identifiers": {
+    "desktop_bundle": "app.smidge.desktop",
+    "desktop_bundle_dev": "app.smidge.desktop.dev",
+    "app_data_dir": "app.smidge.desktop"
+  },
+  "seller": "Underscore Software LLC",
+  "name_status": "working name, awaiting Hunter's approval (docs/DESIGN.md 9.1); every user-facing string reads it from here"
+}

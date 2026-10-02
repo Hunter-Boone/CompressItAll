@@ -1,0 +1,35 @@
+/* Base styles shared by the desktop and web apps. Theme variables come from theme.css. */
+:root {
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Bricolage Grotesque", var(--font-body);
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-panel: 20px;
+  --motion-fast: 170ms;
+  --motion-standard: 240ms;
+  --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  color-scheme: light;
+}
+.theme-dark { color-scheme: dark; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  font-weight: 500;
+  color: var(--on-surface);
+  background: var(--surface-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; margin: 0; }
+h1 { font-size: 1.875rem; line-height: 2.25rem; }
+h2 { font-size: 1.2rem; line-height: 1.75rem; }
+h3 { font-size: 0.875rem; line-height: 1.375rem; }
+button, input, select, textarea { font-family: var(--font-body); font-size: 0.875rem; line-height: 1.375rem; font-weight: 500; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+::selection { background: var(--primary-container); color: var(--on-primary-container); }

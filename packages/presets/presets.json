@@ -1,0 +1,944 @@
+{
+  "schema_version": 1,
+  "presets": [
+    {
+      "id": "discord-free",
+      "group": "discord",
+      "tile_label": "Discord",
+      "tier_label": "Free",
+      "tier_summary": "20 MB",
+      "output_label": "Discord",
+      "icon": "discord",
+      "order": 10,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 20971520,
+        "stated_as": "20 MiB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 65536
+      },
+      "max_files_per_message": 10,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://support.discord.com/hc/en-us/articles/25444343291031-File-Attachments-FAQ",
+          "https://docs.discord.com/developers/reference"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Raised from 10 MB in August 2026. Developer docs state 20 MiB per file; a file of exactly the limit is rejected (discord-api-docs #7603), hence safety_bytes."
+      }
+    },
+    {
+      "id": "discord-nitro-basic",
+      "group": "discord",
+      "tile_label": "Discord",
+      "tier_label": "Nitro Basic",
+      "tier_summary": "50 MB",
+      "output_label": "Discord",
+      "icon": "discord",
+      "order": 11,
+      "mode": "fit",
+      "limit": {
+        "bytes": 50000000,
+        "stated_as": "50 MB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 65536
+      },
+      "max_files_per_message": 10,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://support.discord.com/hc/en-us/articles/25444343291031-File-Attachments-FAQ",
+          "https://support.discord.com/hc/en-us/articles/115000435108"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Stated as 50MB without a unit; decimal is the smaller, safe reading."
+      }
+    },
+    {
+      "id": "discord-nitro",
+      "group": "discord",
+      "tile_label": "Discord",
+      "tier_label": "Nitro",
+      "tier_summary": "1 GB",
+      "output_label": "Discord",
+      "icon": "discord",
+      "order": 12,
+      "mode": "fit",
+      "limit": {
+        "bytes": 1000000000,
+        "stated_as": "1 GB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 1000000
+      },
+      "max_files_per_message": 10,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://support.discord.com/hc/en-us/articles/25444343291031-File-Attachments-FAQ"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Up to 1GB, raised from 500 MB."
+      }
+    },
+    {
+      "id": "discord-boost-2",
+      "group": "discord",
+      "tile_label": "Discord",
+      "tier_label": "Server boost level 2",
+      "tier_summary": "50 MB",
+      "output_label": "Discord",
+      "icon": "discord",
+      "order": 13,
+      "mode": "fit",
+      "limit": {
+        "bytes": 50000000,
+        "stated_as": "50 MB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 65536
+      },
+      "max_files_per_message": 10,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://support.discord.com/hc/en-us/articles/360028038352"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Applies inside that boosted server only."
+      }
+    },
+    {
+      "id": "discord-boost-3",
+      "group": "discord",
+      "tile_label": "Discord",
+      "tier_label": "Server boost level 3",
+      "tier_summary": "100 MB",
+      "output_label": "Discord",
+      "icon": "discord",
+      "order": 14,
+      "mode": "fit",
+      "limit": {
+        "bytes": 100000000,
+        "stated_as": "100 MB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 65536
+      },
+      "max_files_per_message": 10,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://support.discord.com/hc/en-us/articles/360028038352"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Applies inside that boosted server only."
+      }
+    },
+    {
+      "id": "email",
+      "group": "email",
+      "tile_label": "Email",
+      "tier_label": "Gmail, Outlook, Yahoo",
+      "tier_summary": "up to 18 MB of attachments",
+      "output_label": "Email",
+      "icon": "mail",
+      "order": 20,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 25000000,
+        "stated_as": "25 MB",
+        "scope": "per_message",
+        "counts": "mime_base64",
+        "safety_bytes": 0
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 30
+      },
+      "note": "Email adds about a third to every attachment while sending, so a 25 MB email holds about 18 MB of files.",
+      "source": {
+        "urls": [
+          "https://support.google.com/mail/answer/6584",
+          "https://support.microsoft.com/office/sending-limits-in-outlook-com-279ee200-594c-40f0-9ec8-bb6af7735c2e",
+          "https://help.yahoo.com/kb/SLN5673.html"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Gmail: the limit is 25 MB per message. Outlook.com: 25 MB. Yahoo: must not exceed 25MB in total."
+      }
+    },
+    {
+      "id": "email-icloud",
+      "group": "email",
+      "tile_label": "Email",
+      "tier_label": "iCloud Mail",
+      "tier_summary": "up to 14 MB of attachments",
+      "output_label": "Email",
+      "icon": "mail",
+      "order": 21,
+      "mode": "fit",
+      "limit": {
+        "bytes": 20000000,
+        "stated_as": "20 MB",
+        "scope": "per_message",
+        "counts": "mime_base64",
+        "safety_bytes": 0
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 30
+      },
+      "source": {
+        "urls": [
+          "https://support.apple.com/102198"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "20MB per message."
+      }
+    },
+    {
+      "id": "work-email",
+      "group": "work-email",
+      "tile_label": "Work email",
+      "tier_label": "Microsoft 365",
+      "tier_summary": "up to 25 MB of attachments",
+      "output_label": "Work email",
+      "icon": "briefcase",
+      "order": 30,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 35000000,
+        "stated_as": "35 MB",
+        "scope": "per_message",
+        "counts": "mime_base64",
+        "safety_bytes": 0
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 30
+      },
+      "note": "Your company may use a lower limit. Use Custom size if you know it.",
+      "source": {
+        "urls": [
+          "https://learn.microsoft.com/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Exchange Online default send limit 35 MB; admins can lower it."
+      }
+    },
+    {
+      "id": "whatsapp",
+      "group": "whatsapp",
+      "tile_label": "WhatsApp",
+      "tier_summary": "64 MB",
+      "output_label": "WhatsApp",
+      "icon": "whatsapp",
+      "order": 40,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 64000000,
+        "stated_as": "64 MB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 1000000
+      },
+      "limit_by_kind": {
+        "document": {
+          "bytes": 2000000000,
+          "stated_as": "2 GB",
+          "scope": "per_file",
+          "counts": "raw",
+          "safety_bytes": 1000000
+        }
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png"
+        ],
+        "animated": [
+          "gif",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 720,
+        "max_fps": 30
+      },
+      "source": {
+        "urls": [
+          "https://faq.whatsapp.com/453914586839706",
+          "https://faq.whatsapp.com/545917406122452"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Video 100 MB/720p on fast connections and 64 MB/480p on slow ones; the smaller figure is used. Documents up to 2 GB."
+      }
+    },
+    {
+      "id": "imessage",
+      "group": "imessage",
+      "tile_label": "iMessage",
+      "tier_summary": "about 100 MB",
+      "output_label": "iMessage",
+      "icon": "message",
+      "order": 50,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 100000000,
+        "stated_as": "100 MB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 10000000
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://discussions.apple.com/thread/252822623"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "community",
+        "note": "Apple publishes no number; about 100 MB is the community figure, so the safety margin is 10 MB."
+      }
+    },
+    {
+      "id": "slack",
+      "group": "slack",
+      "tile_label": "Slack",
+      "tier_summary": "1 GB",
+      "output_label": "Slack",
+      "icon": "slack",
+      "order": 60,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 1000000000,
+        "stated_as": "1 GB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 1000000
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://slack.com/help/articles/201330736"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Files up to 1GB."
+      }
+    },
+    {
+      "id": "teams",
+      "group": "teams",
+      "tile_label": "Teams",
+      "tier_summary": "100 MB",
+      "output_label": "Teams",
+      "icon": "teams",
+      "order": 70,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 100000000,
+        "stated_as": "100 MB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 1000000
+      },
+      "max_files_per_message": 10,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://learn.microsoft.com/microsoftteams/limits-specifications-teams"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Chat file size limitation 100 MB, up to 10 attachments."
+      }
+    },
+    {
+      "id": "telegram",
+      "group": "telegram",
+      "tile_label": "Telegram",
+      "tier_label": "Free",
+      "tier_summary": "2 GB",
+      "output_label": "Telegram",
+      "icon": "telegram",
+      "order": 80,
+      "mode": "fit",
+      "default_tier": true,
+      "limit": {
+        "bytes": 2000000000,
+        "stated_as": "2 GB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 1000000
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://telegram.org/blog/700-million-and-premium"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Each up to 2 GB."
+      }
+    },
+    {
+      "id": "telegram-premium",
+      "group": "telegram",
+      "tile_label": "Telegram",
+      "tier_label": "Premium",
+      "tier_summary": "4 GB",
+      "output_label": "Telegram",
+      "icon": "telegram",
+      "order": 81,
+      "mode": "fit",
+      "limit": {
+        "bytes": 4000000000,
+        "stated_as": "4 GB",
+        "scope": "per_file",
+        "counts": "raw",
+        "safety_bytes": 1000000
+      },
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 1080,
+        "max_fps": 60
+      },
+      "source": {
+        "urls": [
+          "https://telegram.org/blog/700-million-and-premium"
+        ],
+        "checked_on": "2026-10-02",
+        "confidence": "official",
+        "note": "Send 4 GB files."
+      }
+    },
+    {
+      "id": "custom",
+      "group": "custom",
+      "tile_label": "Custom size",
+      "output_label": "Custom",
+      "icon": "ruler",
+      "order": 90,
+      "mode": "custom",
+      "default_tier": true,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 2160,
+        "max_fps": 60
+      },
+      "note": "Type the limit you were given. Each file, or all files together."
+    },
+    {
+      "id": "smaller",
+      "group": "smaller",
+      "tile_label": "Just make it smaller",
+      "output_label": "smaller",
+      "icon": "shrink",
+      "order": 100,
+      "mode": "smaller",
+      "default_tier": true,
+      "formats": {
+        "image": [
+          "jpeg",
+          "png",
+          "webp",
+          "gif",
+          "avif"
+        ],
+        "animated": [
+          "gif",
+          "webp",
+          "mp4"
+        ],
+        "video": [
+          {
+            "container": "mp4",
+            "video": "h264",
+            "audio": "aac"
+          },
+          {
+            "container": "webm",
+            "video": "vp9",
+            "audio": "opus"
+          }
+        ],
+        "audio": [
+          "mp3",
+          "ogg_opus",
+          "m4a_aac",
+          "flac",
+          "wav"
+        ],
+        "document": "keep"
+      },
+      "video_caps": {
+        "max_short_edge": 2160,
+        "max_fps": 60
+      },
+      "note": "Shrinks everything as much as it can without visible loss."
+    }
+  ]
+}

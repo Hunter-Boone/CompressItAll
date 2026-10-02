@@ -1,0 +1,28 @@
+# Rust
+/target
+**/target
+# Node
+node_modules
+dist
+.turbo
+*.tsbuildinfo
+# Tauri
+apps/desktop/src-tauri/gen/schemas
+# Fixtures (regenerated with `cargo xtask fixtures`; real ones live on the NAS)
+/fixtures/synth/
+/fixtures/real/
+# Local-only
+.audit/
+.env
+.env.local
+*.local.json
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+# Generated outputs
+/target-e2e
+/e2e/**/test-results
+/e2e/**/playwright-report
+*.partial

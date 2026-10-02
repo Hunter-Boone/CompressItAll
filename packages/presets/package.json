@@ -1,0 +1,11 @@
+{
+  "name": "@cia/presets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "presets.json",
+  "exports": {
+    ".": "./presets.json",
+    "./schema": "./presets.schema.json"
+  }
+}
