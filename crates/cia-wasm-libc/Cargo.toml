@@ -1,0 +1,26 @@
+[package]
+name = "cia-wasm-libc"
+description = "Minimal libc symbols (malloc/free, strlen, abort, stdio stubs) so the C codecs link on wasm32-unknown-unknown. Compiles to nothing on other targets."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = []
+# Each feature names the C library that needs the symbols it enables. Enable
+# exactly the set of libraries linked into the final wasm module so no symbol
+# is defined twice.
+mozjpeg = ["_alloc", "_stdio"]
+libwebp = ["_alloc", "_qsort"]
+libdeflate = ["_alloc"]
+# zstd-sys ships its own prefixed shim (rust_zstd_wasm_shim_*); nothing to add.
+zstd = []
+_alloc = []
+_stdio = []
+_qsort = []
+
+[dependencies]
