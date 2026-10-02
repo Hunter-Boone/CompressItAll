@@ -1,0 +1,16 @@
+[package]
+name = "cia-wasm-spike"
+description = "Throwaway spike gate (DESIGN.md 2.5 item 4): proves cia-mozjpeg and cia-webp link and run on wasm32-unknown-unknown. Not shipped."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cia-mozjpeg = { path = "../cia-mozjpeg" }
+cia-webp = { path = "../cia-webp" }
+cia-wasm-libc = { path = "../cia-wasm-libc", features = ["mozjpeg", "libwebp"] }
+wasm-bindgen = "=0.2.100"

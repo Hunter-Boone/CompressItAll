@@ -1,0 +1,23 @@
+[package]
+name = "cia-mozjpeg"
+description = "Safe JPEG encoder over mozjpeg-sys: RGB/RGBA/Gray to memory with progressive scans, trellis quantisation, optimized Huffman and per-call chroma subsampling. Builds for native and wasm32-unknown-unknown."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+thiserror.workspace = true
+# `unwinding` compiles the C with -fexceptions so a panic raised in our
+# error_exit callback can unwind back through libjpeg frames on native.
+mozjpeg-sys = { version = "2.2", default-features = false, features = ["unwinding", "parallel"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+# x86 SIMD needs nasm; mozjpeg-sys falls back to scalar C with a warning when it is missing.
+mozjpeg-sys = { version = "2.2", default-features = false, features = ["unwinding", "parallel", "nasm_simd"] }
+
+[dev-dependencies]
+image.workspace = true
