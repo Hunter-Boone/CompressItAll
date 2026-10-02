@@ -33,9 +33,29 @@ if [ -f "$ROOT/crates/cia-wasm/Cargo.toml" ]; then
   UNITS+=("cia-wasm:wasm32-unknown-unknown")
 fi
 
-# 1. cargo-about over the workspace (its --manifest-path does not narrow the graph; the trees below do).
+# 1. cargo-about once per shipped package (the wasm engine pulls crates the CLI never sees), then
+#    union the results into one file.
 cd "$ROOT"
-cargo about generate -c about.toml --locked -m crates/cia-cli/Cargo.toml -o "$WORK/rust-about.json" tools/licenses/about.hbs
+ABOUTS=()
+for unit in "${UNITS[@]}"; do
+  pkg="${unit%%:*}"
+  cargo about generate -c about.toml --locked -m "crates/$pkg/Cargo.toml" -o "$WORK/about-$pkg.json" tools/licenses/about.hbs
+  ABOUTS+=("$WORK/about-$pkg.json")
+done
+python3 - "$WORK/rust-about.json" "${ABOUTS[@]}" <<'PY'
+import json, sys
+out, *ins = sys.argv[1:]
+by_id = {}
+for f in ins:
+    for lic in json.load(open(f))["licenses"]:
+        cur = by_id.setdefault(lic["id"], {**lic, "used_by": []})
+        seen = {(u.get("crate", u).get("name"), u.get("crate", u).get("version")) for u in cur["used_by"]}
+        for u in lic.get("used_by", []):
+            key = (u.get("crate", u).get("name"), u.get("crate", u).get("version"))
+            if key not in seen:
+                cur["used_by"].append(u); seen.add(key)
+json.dump({"licenses": sorted(by_id.values(), key=lambda l: l["id"])}, open(out, "w"), indent=1)
+PY
 
 # 2. Exact dependency set of each shipped package, normal deps only, per target.
 TREES=()

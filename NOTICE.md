@@ -8,7 +8,7 @@ Smidge compiles permissively licensed Rust crates and npm packages into the desk
 web engine. Video work on the desktop uses FFmpeg, which is never embedded in the application: it is
 downloaded on demand with the user's consent and invoked as a separate command-line process. This
 document lists each component, its licence, and how Smidge complies with that licence for commercial
-distribution (14 in "Downloaded with your permission", 368 in "Built into Smidge", 3 in "Patent licences", 2 in "Fonts").
+distribution (14 in "Downloaded with your permission", 377 in "Built into Smidge", 3 in "Patent licences", 2 in "Fonts").
 
 ## Downloaded with your permission
 
@@ -66,288 +66,291 @@ unmodified and their source is linked. The notice required by the Independent JP
 is attached to mozjpeg-sys. Development-only tools are not listed.
 
 - @noble/ed25519 2.3.0 — MIT — Copyright (c) 2019 Paul Miller (https://paulmillr.com)
-- adler2 2.0.1 — MIT — Jonas Schievink, oyvindln
-- aes 0.9.3 — MIT — Copyright (c) 2018-2024 The RustCrypto Project Developers
-- aho-corasick 1.1.5 — MIT — Copyright (c) 2015 Andrew Gallant
-- aligned 0.4.3 — MIT — Copyright (c) 2017 Jorge Aparicio
-- aligned-vec 0.6.4 — MIT — Copyright (c) 2022 sarah
-- alloc-no-stdlib 2.0.4 — BSD-3-Clause — Copyright (c) 2016 Dropbox, Inc.
-- alloc-stdlib 0.2.4 — BSD-3-Clause — Daniel Reiter Horn
-- anstream 1.0.0 — MIT — Copyright (c) Individual contributors
-- anstyle 1.0.14 — MIT — Copyright (c) Individual contributors
-- anstyle-parse 1.0.0 — MIT — Copyright (c) Individual contributors
-- anstyle-query 1.1.5 — MIT — Copyright (c) Individual contributors
-- anstyle-wincon 3.0.11 — MIT — Copyright (c) Individual contributors
-- anyhow 1.0.104 — MIT — David Tolnay
-- arg_enum_proc_macro 0.3.4 — MIT — Copyright (c) 2018 Luca Barbato
-- arrayvec 0.7.8 — MIT — Copyright (c) Ulrik Sverdrup "bluss" 2015-2023
-- as-slice 0.2.1 — MIT — Copyright (c) 2018 Jorge Aparicio
+- adler2 2.0.1 — MIT — Copyright (c) 2016 Alex Crichton
+- aes 0.9.3 — MIT — Copyright (c) 2016 Alex Crichton
+- aho-corasick 1.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- aligned 0.4.3 — MIT — Copyright (c) 2016 Alex Crichton
+- aligned-vec 0.6.4 — MIT — Copyright (c) 2016 Alex Crichton
+- alloc-no-stdlib 2.0.4 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- alloc-stdlib 0.2.4 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- anstream 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- anstyle 1.0.14 — MIT — Copyright (c) 2016 Alex Crichton
+- anstyle-parse 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- anstyle-query 1.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- anstyle-wincon 3.0.11 — MIT — Copyright (c) 2016 Alex Crichton
+- anyhow 1.0.104 — MIT — Copyright (c) 2016 Alex Crichton
+- arg_enum_proc_macro 0.3.4 — MIT — Copyright (c) 2016 Alex Crichton
+- arrayvec 0.7.8 — MIT — Copyright (c) 2016 Alex Crichton
+- as-slice 0.2.1 — MIT — Copyright (c) 2016 Alex Crichton
 - atomic-waker 1.1.2 — MIT — Copyright (c) 2016 Alex Crichton
-- audiopus_sys 0.2.2 — ISC — Copyright (c) 2019, Lakelezz
-- av-data 0.4.4 — MIT — Copyright (c) 2017 Luca Barbato
-- av-scenechange 0.14.1 — MIT — Copyright (c) 2019 Multimedia and Rust
-- av1-grain 0.2.5 — BSD-2-Clause — Copyright (c) 2022-2022, the rav1e contributors
+- audiopus_sys 0.2.2 — ISC — Copyright 2015-2016 Brian Smith.
+- av-data 0.4.4 — MIT — Copyright (c) 2016 Alex Crichton
+- av-scenechange 0.14.1 — MIT — Copyright (c) 2016 Alex Crichton
+- av1-grain 0.2.5 — BSD-2-Clause — Copyright (c) 2017-2022, the rav1e contributors
 - avif-serialize 0.8.9 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
-- base64 0.22.1 — MIT — Copyright (c) 2015 Alice Maz
-- base64 0.23.1 — MIT — Copyright (c) 2025 Alice Maz, Marshall Pierce
-- bitflags 1.3.2 — MIT — Copyright (c) 2014 The Rust Project Developers
-- bitflags 2.13.2 — MIT — Copyright (c) 2014 The Rust Project Developers
-- bitstream-io 4.10.0 — MIT — Copyright (c) 2017 Brian Langenberger
-- bitvec 1.1.1 — MIT — Copyright (c) 2018 myrrlyn (Alexander Payne)
-- block-buffer 0.10.4 — MIT — Copyright (c) 2018-2019 The RustCrypto Project Developers
-- block-buffer 0.12.1 — MIT — Copyright (c) 2018-2025 The RustCrypto Project Developers
-- block-padding 0.4.2 — MIT — Copyright (c) 2018-2025 The RustCrypto Project Developers
-- brotli 8.0.4 — MIT AND BSD-3-Clause — Copyright (c) 2009, 2010, 2013-2016 by the Brotli Authors.
-- brotli-decompressor 5.0.3 — MIT — Daniel Reiter Horn, The Brotli Authors
-- bumpalo 3.20.3 — MIT — Copyright (c) 2019 Nick Fitzgerald
-- by_address 1.2.1 — MIT — Copyright (c) 2017 Matt Brubeck
-- byte-slice-cast 1.2.3 — MIT — Copyright (c) 2017 Sebastian Dröge <sebastian@centricular.com>.
-- bytemuck 1.25.2 — MIT — Copyright (c) 2019 Daniel "Lokathor" Gee.
-- bytemuck_derive 1.12.1 — MIT — Copyright (c) 2019 Daniel "Lokathor" Gee.
-- byteorder 1.5.0 — MIT — Copyright (c) 2015 Andrew Gallant
-- byteorder-lite 0.1.0 — MIT — Copyright (c) 2015 Andrew Gallant
-- bytes 1.12.1 — MIT — Copyright (c) 2018 Carl Lerche
-- bzip2 0.6.1 — MIT — Copyright (c) 2014-2025 Alex Crichton and Contributors
-- cbc 0.2.1 — MIT — Copyright (c) 2018-2022 RustCrypto Developers
-- cfb 0.7.3 — MIT — Copyright (c) 2017 Matthew D. Steele
-- cfg-if 1.0.5 — MIT — Copyright (c) 2014 Alex Crichton
-- chacha20 0.10.2 — MIT — Copyright (c) 2019-2026 The RustCrypto Project Developers
-- cipher 0.5.2 — MIT — Copyright (c) 2016-2025 RustCrypto Developers
-- clap 4.6.7 — MIT — Copyright (c) Individual contributors
-- clap_builder 4.6.7 — MIT — Copyright (c) Individual contributors
-- clap_derive 4.6.7 — MIT — Copyright (c) Individual contributors
-- clap_lex 1.1.1 — MIT — Copyright (c) Individual contributors
+- base64 0.22.1 — MIT — Copyright (c) 2016 Alex Crichton
+- base64 0.23.1 — MIT — Copyright (c) 2016 Alex Crichton
+- bitflags 1.3.2 — MIT — Copyright (c) 2016 Alex Crichton
+- bitflags 2.13.2 — MIT — Copyright (c) 2016 Alex Crichton
+- bitstream-io 4.10.0 — MIT — Copyright (c) 2016 Alex Crichton
+- bitvec 1.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- block-buffer 0.10.4 — MIT — Copyright (c) 2016 Alex Crichton
+- block-buffer 0.12.1 — MIT — Copyright (c) 2016 Alex Crichton
+- block-padding 0.4.2 — MIT — Copyright (c) 2016 Alex Crichton
+- brotli 8.0.4 — MIT AND BSD-3-Clause — Copyright (c) 2016 Alex Crichton
+- brotli-decompressor 5.0.3 — MIT — Copyright (c) 2016 Alex Crichton
+- bumpalo 3.20.3 — MIT — Copyright (c) 2016 Alex Crichton
+- by_address 1.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- byte-slice-cast 1.2.3 — MIT — Copyright (c) 2016 Alex Crichton
+- bytemuck 1.25.2 — MIT — Copyright (c) 2016 Alex Crichton
+- bytemuck_derive 1.12.1 — MIT — Copyright (c) 2016 Alex Crichton
+- byteorder 1.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- byteorder-lite 0.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- bytes 1.12.1 — MIT — Copyright (c) 2016 Alex Crichton
+- bzip2 0.6.1 — MIT — Copyright (c) 2016 Alex Crichton
+- cbc 0.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- cfb 0.7.3 — MIT — Copyright (c) 2016 Alex Crichton
+- cfg-if 1.0.5 — MIT — Copyright (c) 2016 Alex Crichton
+- chacha20 0.10.2 — MIT — Copyright (c) 2016 Alex Crichton
+- cipher 0.5.2 — MIT — Copyright (c) 2016 Alex Crichton
+- clap 4.6.7 — MIT — Copyright (c) 2016 Alex Crichton
+- clap_builder 4.6.7 — MIT — Copyright (c) 2016 Alex Crichton
+- clap_derive 4.6.7 — MIT — Copyright (c) 2016 Alex Crichton
+- clap_lex 1.1.1 — MIT — Copyright (c) 2016 Alex Crichton
 - clsx 2.1.1 — MIT — Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com)
-- color_quant 1.1.0 — MIT — Copyright (c) 2016 PistonDevelopers
-- colorchoice 1.0.5 — MIT — Copyright (c) Individual contributors
-- const-oid 0.10.2 — MIT — Copyright (c) 2020-2026 The RustCrypto Project Developers
-- core_detect 1.0.0 — MIT — Copyright (c) 2017-2020 The Rust Project Developers
-- cpubits 0.1.1 — MIT — Copyright (c) 2023-2026 The RustCrypto Project Developers
-- cpufeatures 0.2.17 — MIT — Copyright (c) 2020-2025 The RustCrypto Project Developers
-- cpufeatures 0.3.1 — MIT — Copyright (c) 2020-2026 The RustCrypto Project Developers
-- crc 3.4.0 — MIT — Copyright (c) 2017 crc-rs Developers
-- crc-catalog 2.5.0 — MIT — Akhil Velagapudi
-- crc32fast 1.5.2 — MIT — Copyright (c) 2018 Sam Rijs, Alex Crichton and contributors
-- crossbeam-deque 0.8.8 — MIT — Copyright (c) 2019 The Crossbeam Project Developers
-- crossbeam-epoch 0.9.21 — MIT — Copyright (c) 2019 The Crossbeam Project Developers
-- crossbeam-utils 0.8.23 — MIT — Copyright (c) 2019 The Crossbeam Project Developers
-- crypto-common 0.1.7 — MIT — Copyright (c) 2021 RustCrypto Developers
-- crypto-common 0.2.2 — MIT — Copyright (c) 2021-2026 RustCrypto Developers
-- curve25519-dalek 4.1.3 — BSD-3-Clause — Isis Lovecruft, Henry de Valence
-- curve25519-dalek-derive 0.1.1 — MIT
-- data-encoding 2.11.1 — MIT — Copyright (c) 2015-2020 Julien Cretin
-- digest 0.10.7 — MIT — Copyright (c) 2017 Artyom Pavlov
-- digest 0.11.3 — MIT — Copyright (c) 2017-2025 RustCrypto Developers
-- dirs 6.0.0 — MIT — Copyright (c) 2018-2019 dirs-rs contributors
-- dirs-sys 0.5.0 — MIT — Copyright (c) 2018-2019 dirs-rs contributors
-- displaydoc 0.2.7 — MIT — Jane Lusby
-- document-features 0.2.12 — MIT — Copyright (c) 2020 Olivier Goffart <ogoffart@sixtyfps.io>
-- ecb 0.2.1 — MIT — Copyright (c) 2026 RustCrypto Developers
-- ed25519 2.2.3 — MIT — Copyright (c) 2018-2023 RustCrypto Developers
-- ed25519-dalek 2.2.0 — BSD-3-Clause — Copyright (c) 2017-2019 isis agora lovecruft. All rights reserved.
-- either 1.18.0 — MIT — Copyright (c) 2015
-- encoding_rs 0.8.42 — MIT AND BSD-3-Clause — Copyright Mozilla Foundation
-- env_filter 2.0.0 — MIT — Copyright (c) Individual contributors
-- env_logger 0.11.11 — MIT — Copyright (c) Individual contributors
-- equator 0.4.2 — MIT — Copyright (c) 2023 sarah
-- equator-macro 0.4.2 — MIT — Copyright (c) 2023 sarah
-- equivalent 1.0.2 — MIT — Copyright (c) 2016--2023
-- errno 0.3.14 — MIT — Copyright (c) 2014 Chris Wong
-- extended 0.1.0 — MIT — Copyright 2022 Dietrich Epp
-- fast_image_resize 6.1.0 — MIT — Copyright (c) 2021 Kirill Kuzminykh
-- fastrand 2.5.0 — MIT — Stjepan Glavina
-- fax 0.2.7 — MIT — Copyright © 2021 The pdf-rs contributers.
-- fdeflate 0.3.7 — MIT — The image-rs Developers
-- filetime 0.2.29 — MIT — Copyright (c) 2014 Alex Crichton
+- color_quant 1.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- colorchoice 1.0.5 — MIT — Copyright (c) 2016 Alex Crichton
+- console_error_panic_hook 0.1.7 — MIT — Copyright (c) 2016 Alex Crichton
+- const-oid 0.10.2 — MIT — Copyright (c) 2016 Alex Crichton
+- core_detect 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- cpubits 0.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- cpufeatures 0.2.17 — MIT — Copyright (c) 2016 Alex Crichton
+- cpufeatures 0.3.1 — MIT — Copyright (c) 2016 Alex Crichton
+- crc 3.4.0 — MIT — Copyright (c) 2016 Alex Crichton
+- crc-catalog 2.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- crc32fast 1.5.2 — MIT — Copyright (c) 2016 Alex Crichton
+- crossbeam-deque 0.8.8 — MIT — Copyright (c) 2016 Alex Crichton
+- crossbeam-epoch 0.9.21 — MIT — Copyright (c) 2016 Alex Crichton
+- crossbeam-utils 0.8.23 — MIT — Copyright (c) 2016 Alex Crichton
+- crypto-common 0.1.7 — MIT — Copyright (c) 2016 Alex Crichton
+- crypto-common 0.2.2 — MIT — Copyright (c) 2016 Alex Crichton
+- curve25519-dalek 4.1.3 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- curve25519-dalek-derive 0.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- data-encoding 2.11.1 — MIT — Copyright (c) 2016 Alex Crichton
+- digest 0.10.7 — MIT — Copyright (c) 2016 Alex Crichton
+- digest 0.11.3 — MIT — Copyright (c) 2016 Alex Crichton
+- dirs 6.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- dirs-sys 0.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- displaydoc 0.2.7 — MIT — Copyright (c) 2016 Alex Crichton
+- document-features 0.2.12 — MIT — Copyright (c) 2016 Alex Crichton
+- ecb 0.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- ed25519 2.2.3 — MIT — Copyright (c) 2016 Alex Crichton
+- ed25519-dalek 2.2.0 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- either 1.18.0 — MIT — Copyright (c) 2016 Alex Crichton
+- encoding_rs 0.8.42 — MIT AND BSD-3-Clause — Copyright (c) 2016 Alex Crichton
+- env_filter 2.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- env_logger 0.11.11 — MIT — Copyright (c) 2016 Alex Crichton
+- equator 0.4.2 — MIT — Copyright (c) 2016 Alex Crichton
+- equator-macro 0.4.2 — MIT — Copyright (c) 2016 Alex Crichton
+- equivalent 1.0.2 — MIT — Copyright (c) 2016 Alex Crichton
+- errno 0.3.14 — MIT — Copyright (c) 2016 Alex Crichton
+- extended 0.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- fast_image_resize 6.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- fastrand 2.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- fax 0.2.7 — MIT — Copyright (c) 2016 Alex Crichton
+- fdeflate 0.3.7 — MIT — Copyright (c) 2016 Alex Crichton
+- filetime 0.2.29 — MIT — Copyright (c) 2016 Alex Crichton
 - flacenc 0.5.1 — Apache-2.0 — Yotaro Kubo
-- flate2 1.1.10 — MIT — Copyright (c) 2014-2026 Alex Crichton
-- fnv 1.0.7 — MIT — Copyright (c) 2017 Contributors
-- form_urlencoded 1.2.2 — MIT — Copyright (c) 2013-2016 The rust-url developers
-- funty 2.0.0 — MIT — Copyright (c) 2020 myrrlyn (Alexander Payne)
+- flate2 1.1.10 — MIT — Copyright (c) 2016 Alex Crichton
+- fnv 1.0.7 — MIT — Copyright (c) 2016 Alex Crichton
+- form_urlencoded 1.2.2 — MIT — Copyright (c) 2016 Alex Crichton
+- funty 2.0.0 — MIT — Copyright (c) 2016 Alex Crichton
 - futures-channel 0.3.34 — MIT — Copyright (c) 2016 Alex Crichton
 - futures-core 0.3.34 — MIT — Copyright (c) 2016 Alex Crichton
 - futures-io 0.3.34 — MIT — Copyright (c) 2016 Alex Crichton
 - futures-sink 0.3.34 — MIT — Copyright (c) 2016 Alex Crichton
 - futures-task 0.3.34 — MIT — Copyright (c) 2016 Alex Crichton
 - futures-util 0.3.34 — MIT — Copyright (c) 2016 Alex Crichton
-- generic-array 0.14.7 — MIT — Copyright (c) 2015 Bartłomiej Kamiński
-- getrandom 0.2.17 — MIT — Copyright (c) 2018-2024 The rust-random Project Developers
-- getrandom 0.3.4 — MIT — Copyright (c) 2018-2025 The rust-random Project Developers
-- getrandom 0.4.3 — MIT — Copyright (c) 2018-2026 The rust-random Project Developers
-- gif 0.14.2 — MIT — Copyright (c) 2015 nwin
-- half 2.7.1 — MIT — Kathryn Long
-- hash32 0.3.1 — MIT — Copyright (c) 2018 Jorge Aparicio
-- hashbrown 0.17.1 — MIT — Copyright (c) 2016 Amanieu d'Antras
-- heapless 0.8.0 — MIT — Copyright (c) 2017 Jorge Aparicio
-- heck 0.5.0 — MIT — Copyright (c) 2015 The Rust Project Developers
+- generic-array 0.14.7 — MIT — Copyright (c) 2016 Alex Crichton
+- getrandom 0.2.17 — MIT — Copyright (c) 2016 Alex Crichton
+- getrandom 0.3.4 — MIT — Copyright (c) 2016 Alex Crichton
+- getrandom 0.4.3 — MIT — Copyright (c) 2016 Alex Crichton
+- gif 0.14.2 — MIT — Copyright (c) 2016 Alex Crichton
+- half 2.7.1 — MIT — Copyright (c) 2016 Alex Crichton
+- hash32 0.3.1 — MIT — Copyright (c) 2016 Alex Crichton
+- hashbrown 0.17.1 — MIT — Copyright (c) 2016 Alex Crichton
+- heapless 0.8.0 — MIT — Copyright (c) 2016 Alex Crichton
+- heck 0.5.0 — MIT — Copyright (c) 2016 Alex Crichton
 - hound 3.5.1 — Apache-2.0 — Ruud van Asseldonk
-- http 1.5.0 — MIT — Copyright (c) 2017 http-rs authors
-- http-body 1.1.0 — MIT — Copyright (c) 2019-2026 Sean McArthur & Hyper Contributors
-- http-body-util 0.1.5 — MIT — Copyright (c) 2019-2026 Sean McArthur & Hyper Contributors
-- httparse 1.10.1 — MIT — Copyright (c) 2015-2025 Sean McArthur
-- hybrid-array 0.4.15 — MIT — Copyright (c) 2022-2026 The RustCrypto Project Developers
-- hyper 1.11.1 — MIT — Copyright (c) 2014-2026 Sean McArthur
-- hyper-rustls 0.27.10 — MIT — Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>
-- hyper-util 0.1.21 — MIT — Copyright (c) 2023-2025 Sean McArthur
-- icu_collections 2.3.0 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- icu_locale_core 2.3.0 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- icu_normalizer 2.3.0 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- icu_normalizer_data 2.3.0 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- icu_properties 2.3.0 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- icu_properties_data 2.3.0 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- icu_provider 2.3.1 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
+- http 1.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- http-body 1.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- http-body-util 0.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- httparse 1.10.1 — MIT — Copyright (c) 2016 Alex Crichton
+- hybrid-array 0.4.15 — MIT — Copyright (c) 2016 Alex Crichton
+- hyper 1.11.1 — MIT — Copyright (c) 2016 Alex Crichton
+- hyper-rustls 0.27.10 — MIT — Copyright (c) 2016 Alex Crichton
+- hyper-util 0.1.21 — MIT — Copyright (c) 2016 Alex Crichton
+- icu_collections 2.3.0 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- icu_locale_core 2.3.0 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- icu_normalizer 2.3.0 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- icu_normalizer_data 2.3.0 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- icu_properties 2.3.0 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- icu_properties_data 2.3.0 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- icu_provider 2.3.1 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
 - idb-keyval 6.3.0 — Apache-2.0 — Copyright 2016, Jake Archibald
-- idna 1.1.0 — MIT — Copyright (c) 2013-2025 The rust-url developers
-- idna_adapter 1.2.2 — MIT — Copyright (c) The rust-url developers
-- image 0.25.10 — MIT — The image-rs Developers
-- image-webp 0.2.4 — MIT
+- idna 1.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- idna_adapter 1.2.2 — MIT — Copyright (c) 2016 Alex Crichton
+- image 0.25.10 — MIT — Copyright (c) 2016 Alex Crichton
+- image-webp 0.2.4 — MIT — Copyright (c) 2016 Alex Crichton
 - imgref 1.12.3 — Apache-2.0 — Kornel Lesiński — Declared CC0-1.0 OR Apache-2.0; used under Apache-2.0.
-- indexmap 2.14.2 — MIT — Copyright (c) 2016--2017
-- infer 0.16.0 — MIT — Copyright (c) 2019 Bojan
-- inout 0.2.2 — MIT — Copyright (c) 2022-2025 The RustCrypto Project Developers
-- ipnet 2.12.2 — MIT — Copyright 2017 Juniper Networks, Inc.
-- is_terminal_polyfill 1.70.2 — MIT — Copyright (c) Individual contributors
-- itertools 0.14.0 — MIT — Copyright (c) 2015
-- itoa 1.0.18 — MIT — David Tolnay
-- jiff 0.2.37 — MIT — Copyright (c) 2015 Andrew Gallant
-- jiff-core 0.1.1 — MIT — Copyright (c) 2015 Andrew Gallant
+- indexmap 2.14.2 — MIT — Copyright (c) 2016 Alex Crichton
+- infer 0.16.0 — MIT — Copyright (c) 2016 Alex Crichton
+- inout 0.2.2 — MIT — Copyright (c) 2016 Alex Crichton
+- ipnet 2.12.2 — MIT — Copyright (c) 2016 Alex Crichton
+- is_terminal_polyfill 1.70.2 — MIT — Copyright (c) 2016 Alex Crichton
+- itertools 0.14.0 — MIT — Copyright (c) 2016 Alex Crichton
+- itoa 1.0.18 — MIT — Copyright (c) 2016 Alex Crichton
+- jiff 0.2.37 — MIT — Copyright (c) 2016 Alex Crichton
+- jiff-core 0.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- js-sys 0.3.77 — MIT — Copyright (c) 2016 Alex Crichton
 - js-tokens 4.0.0 — MIT — Copyright (c) 2014, 2015, 2016, 2017, 2018 Simon Lydell
-- jxl-bitstream 1.1.0 — MIT — Wonwoo Choi
-- jxl-coding 1.0.1 — MIT — Wonwoo Choi
-- jxl-color 0.11.0 — MIT — Wonwoo Choi
-- jxl-frame 0.13.3 — MIT — Wonwoo Choi
-- jxl-grid 0.6.2 — MIT — Wonwoo Choi
-- jxl-image 0.13.0 — MIT — Wonwoo Choi
-- jxl-jbr 0.2.1 — MIT — Wonwoo Choi
-- jxl-modular 0.11.3 — MIT — Wonwoo Choi
-- jxl-oxide 0.12.6 — MIT — Wonwoo Choi
-- jxl-oxide-common 1.0.0 — MIT — Wonwoo Choi
-- jxl-render 0.12.4 — MIT — Wonwoo Choi
-- jxl-threadpool 1.0.0 — MIT — Wonwoo Choi
-- jxl-vardct 0.11.1 — MIT — Wonwoo Choi
-- kamadak-exif 0.6.1 — BSD-2-Clause — Copyright (c) 2016-2023 KAMADA Ken'ichi.
-- lazy_static 1.5.1 — MIT — Marvin Löbel
+- jxl-bitstream 1.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-coding 1.0.1 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-color 0.11.0 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-frame 0.13.3 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-grid 0.6.2 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-image 0.13.0 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-jbr 0.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-modular 0.11.3 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-oxide 0.12.6 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-oxide-common 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-render 0.12.4 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-threadpool 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- jxl-vardct 0.11.1 — MIT — Copyright (c) 2016 Alex Crichton
+- kamadak-exif 0.6.1 — BSD-2-Clause — Copyright (c) 2017-2022, the rav1e contributors
+- lazy_static 1.5.1 — MIT — Copyright (c) 2016 Alex Crichton
 - libbz2-rs-sys 0.2.5 — bzip2-1.0.6 — Copyright (C) 1996-2021 Julian R Seward.
-- libc 0.2.189 — MIT — Copyright (c) The Rust Project Developers
+- libc 0.2.189 — MIT — Copyright (c) 2016 Alex Crichton
 - libdeflate-sys 1.26.1 — Apache-2.0 — Adam Kewley
 - libdeflater 1.26.1 — Apache-2.0 — Adam Kewley
-- liblzma 0.4.8 — MIT — Copyright (c) 2016-2023 Alex Crichton and Portable-Network-Archive Developers
-- liblzma-sys 0.4.9 — MIT — Copyright (c) 2016-2023 Alex Crichton and Portable-Network-Archive Developers
-- libm 0.2.16 — MIT — Alex Crichton, Amanieu d'Antras, Jorge Aparicio, Trevor Gross
-- libwebp-sys 0.14.4 — MIT — XianYou, Kornel Lesiński
-- linux-raw-sys 0.12.1 — MIT — Dan Gohman
-- litemap 0.8.3 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- litrs 1.0.0 — MIT — Copyright (c) 2020 Project Developers
-- little_exif 0.6.23 — MIT — Copyright (c) 2022 Tobias Prisching
-- log 0.4.34 — MIT — Copyright (c) 2014 The Rust Project Developers
-- loop9 0.1.5 — MIT — © Kornel Lesiński
+- liblzma 0.4.8 — MIT — Copyright (c) 2016 Alex Crichton
+- liblzma-sys 0.4.9 — MIT — Copyright (c) 2016 Alex Crichton
+- libm 0.2.16 — MIT — Copyright (c) 2016 Alex Crichton
+- libwebp-sys 0.14.4 — MIT — Copyright (c) 2016 Alex Crichton
+- linux-raw-sys 0.12.1 — MIT — Copyright (c) 2016 Alex Crichton
+- litemap 0.8.3 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- litrs 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- little_exif 0.6.23 — MIT — Copyright (c) 2016 Alex Crichton
+- log 0.4.34 — MIT — Copyright (c) 2016 Alex Crichton
+- loop9 0.1.5 — MIT — Copyright (c) 2016 Alex Crichton
 - loose-envify 1.4.0 — MIT — Copyright (c) 2015 Andres Suarez <zertosh@gmail.com>
-- lopdf 0.45.0 — MIT — Copyright (c) 2016 Junfeng Liu
+- lopdf 0.45.0 — MIT — Copyright (c) 2016 Alex Crichton
 - lucide-react 1.50.0 — ISC — Copyright (c) 2026 Lucide Icons and Contributors
 - lzma-rust2 0.21.0 — Apache-2.0
-- maybe-rayon 0.1.1 — MIT — Copyright (c) 2021 Joshua Holmer
-- md-5 0.10.6 — MIT — Copyright (c) 2006-2009 Graydon Hoare
-- md-5 0.11.0 — MIT — Copyright (c) 2016-2026 The RustCrypto Project Developers
+- maybe-rayon 0.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- md-5 0.10.6 — MIT — Copyright (c) 2016 Alex Crichton
+- md-5 0.11.0 — MIT — Copyright (c) 2016 Alex Crichton
 - mediabunny 1.61.0 — MPL-2.0 — Copyright (c) Vanilagy — Used unmodified. Source: https://github.com/Vanilagy/mediabunny
-- memchr 2.8.3 — MIT — Copyright (c) 2015 Andrew Gallant
-- miniz_oxide 0.8.9 — MIT — Copyright 2013-2014 RAD Game Tools and Valve Software
-- miniz_oxide 0.9.1 — MIT — Copyright 2013-2014 RAD Game Tools and Valve Software
-- mio 1.2.3 — MIT — Copyright (c) 2014 Carl Lerche and other MIO contributors
-- moxcms 0.8.1 — Apache-2.0 — Copyright 2024 Radzivon Bartoshyk — Declared BSD-3-Clause OR Apache-2.0; used under Apache-2.0.
+- memchr 2.8.3 — MIT — Copyright (c) 2016 Alex Crichton
+- miniz_oxide 0.8.9 — MIT — Copyright (c) 2016 Alex Crichton
+- miniz_oxide 0.9.1 — MIT — Copyright (c) 2016 Alex Crichton
+- mio 1.2.3 — MIT — Copyright (c) 2016 Alex Crichton
+- moxcms 0.8.1 — Apache-2.0 — Radzivon Bartoshyk — Declared BSD-3-Clause OR Apache-2.0; used under Apache-2.0.
 - mozjpeg-sys 2.2.3 — BSD-3-Clause AND Zlib AND IJG — Copyright (C) 2009-2023 D. R. Commander, Copyright (C) 2015 Viktor Szathmáry (libjpeg-turbo); the Independent JPEG Group (libjpeg); Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler (zlib) — mozjpeg ships one combined licence file (IJG, libjpeg-turbo BSD-3-Clause, zlib); it is reproduced in full. This software is based in part on the work of the Independent JPEG Group.
-- multiversion_no_op 1.0.0 — MIT — Copyright Mozilla Foundation
-- mutate_once 0.1.2 — BSD-2-Clause — Copyright (c) 2019 KAMADA Ken'ichi.
-- new_debug_unreachable 1.0.6 — MIT — Copyright (c) 2015 Jonathan Reem
-- no_std_io2 0.9.4 — MIT — Copyright (c) 2020-2021 Brendan Molloy <brendan@bbqsrc.net>
-- nom 8.0.0 — MIT — Copyright (c) 2014-2019 Geoffroy Couprie
-- noop_proc_macro 0.3.0 — MIT — Copyright (c) 2019 Luca Barbato
-- num-bigint 0.4.8 — MIT — Copyright (c) 2014 The Rust Project Developers
-- num-complex 0.4.6 — MIT — Copyright (c) 2014 The Rust Project Developers
-- num-derive 0.4.2 — MIT — Copyright (c) 2014 The Rust Project Developers
-- num-integer 0.1.47 — MIT — Copyright (c) 2014 The Rust Project Developers
-- num-rational 0.4.2 — MIT — Copyright (c) 2014 The Rust Project Developers
-- num-traits 0.2.19 — MIT — Copyright (c) 2014 The Rust Project Developers
-- ogg 0.9.2 — BSD-3-Clause — Copyright (c) 2016-2017 est31 <MTest31@outlook.com> and contributors
-- once_cell 1.21.4 — MIT — Aleksey Kladov
-- once_cell_polyfill 1.70.2 — MIT — Copyright (c) Individual contributors
+- multiversion_no_op 1.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- mutate_once 0.1.2 — BSD-2-Clause — Copyright (c) 2017-2022, the rav1e contributors
+- new_debug_unreachable 1.0.6 — MIT — Copyright (c) 2016 Alex Crichton
+- no_std_io2 0.9.4 — MIT — Copyright (c) 2016 Alex Crichton
+- nom 8.0.0 — MIT — Copyright (c) 2016 Alex Crichton
+- noop_proc_macro 0.3.0 — MIT — Copyright (c) 2016 Alex Crichton
+- num-bigint 0.4.8 — MIT — Copyright (c) 2016 Alex Crichton
+- num-complex 0.4.6 — MIT — Copyright (c) 2016 Alex Crichton
+- num-derive 0.4.2 — MIT — Copyright (c) 2016 Alex Crichton
+- num-integer 0.1.47 — MIT — Copyright (c) 2016 Alex Crichton
+- num-rational 0.4.2 — MIT — Copyright (c) 2016 Alex Crichton
+- num-traits 0.2.19 — MIT — Copyright (c) 2016 Alex Crichton
+- ogg 0.9.2 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- once_cell 1.21.4 — MIT — Copyright (c) 2016 Alex Crichton
+- once_cell_polyfill 1.70.2 — MIT — Copyright (c) 2016 Alex Crichton
 - option-ext 0.2.0 — MPL-2.0 — Simon Ochsenreither — Used unmodified. Source: https://github.com/soc/option-ext
-- opus 0.3.1 — MIT — Copyright (c) 2016 Tad Hardesty
-- ordered-float 5.5.0 — MIT — Copyright (c) 2015 Jonathan Reem
-- oxipng 9.1.5 — MIT — Copyright (c) 2016 Joshua Holmer
-- palette 0.7.7 — MIT — Copyright (c) 2015 Erik Hedvall
-- palette_derive 0.7.7 — MIT — Copyright (c) 2015 Erik Hedvall
-- palette_math 0.7.7 — MIT — Erik Hedvall
-- paste 1.0.15 — MIT — David Tolnay
-- pastey 0.1.1 — MIT — Aditya Kumar, David Tolnay
-- percent-encoding 2.3.2 — MIT — Copyright (c) 2013-2025 The rust-url developers
-- pin-project-lite 0.2.17 — MIT
-- png 0.18.1 — MIT — Copyright (c) 2015 nwin
-- potential_utf 0.1.6 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- primal-check 0.3.4 — MIT — Copyright (c) 2014 Huon Wilson
-- proc-macro2 1.0.107 — MIT — David Tolnay, Alex Crichton
-- profiling 1.0.18 — MIT — Philip Degarmo
-- profiling-procmacros 1.0.18 — MIT — Philip Degarmo
-- pxfm 0.1.30 — Apache-2.0 — Copyright 2024 Radzivon Bartoshyk — Declared BSD-3-Clause OR Apache-2.0; used under Apache-2.0.
-- qoi 0.4.1 — MIT — Copyright (c) 2022 Ivan Smirnov
-- quantette 0.6.0 — MIT
-- quick-error 2.0.1 — MIT — Copyright (c) 2015 The quick-error Developers
-- quick-xml 0.37.5 — MIT — Copyright (c) 2016 Johann Tuffe
-- quick-xml 0.39.4 — MIT — Copyright (c) 2016 Johann Tuffe
-- quote 1.0.47 — MIT — David Tolnay
-- radium 0.7.0 — MIT — Copyright (c) 2019 kneecaw (Nika Layzell)
-- rand 0.10.3 — MIT — Copyright 2018 Developers of the Rand project
-- rand_core 0.10.1 — MIT — Copyright (c) 2018-2026 The Rand Project Developers
-- rand_xoshiro 0.8.1 — MIT — Copyright (c) 2018 Developers of the Rand project
-- rangemap 1.8.0 — MIT — Copyright 2019 Jeffrey Parsons
-- rav1e 0.8.1 — BSD-2-Clause — Copyright (c) 2017-2023, the rav1e contributors
-- ravif 0.13.0 — BSD-3-Clause — Copyright (c) 2020, Kornel
-- rayon 1.12.0 — MIT — Copyright (c) 2010 The Rust Project Developers
-- rayon-core 1.13.0 — MIT — Copyright (c) 2010 The Rust Project Developers
+- opus 0.3.1 — MIT — Copyright (c) 2016 Alex Crichton
+- ordered-float 5.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- oxipng 9.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- palette 0.7.7 — MIT — Copyright (c) 2016 Alex Crichton
+- palette_derive 0.7.7 — MIT — Copyright (c) 2016 Alex Crichton
+- palette_math 0.7.7 — MIT — Copyright (c) 2016 Alex Crichton
+- paste 1.0.15 — MIT — Copyright (c) 2016 Alex Crichton
+- pastey 0.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- percent-encoding 2.3.2 — MIT — Copyright (c) 2016 Alex Crichton
+- pin-project-lite 0.2.17 — MIT — Copyright (c) 2016 Alex Crichton
+- png 0.18.1 — MIT — Copyright (c) 2016 Alex Crichton
+- potential_utf 0.1.6 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- primal-check 0.3.4 — MIT — Copyright (c) 2016 Alex Crichton
+- proc-macro2 1.0.107 — MIT — Copyright (c) 2016 Alex Crichton
+- profiling 1.0.18 — MIT — Copyright (c) 2016 Alex Crichton
+- profiling-procmacros 1.0.18 — MIT — Copyright (c) 2016 Alex Crichton
+- pxfm 0.1.30 — Apache-2.0 — Radzivon Bartoshyk — Declared BSD-3-Clause OR Apache-2.0; used under Apache-2.0.
+- qoi 0.4.1 — MIT — Copyright (c) 2016 Alex Crichton
+- quantette 0.6.0 — MIT — Copyright (c) 2016 Alex Crichton
+- quick-error 2.0.1 — MIT — Copyright (c) 2016 Alex Crichton
+- quick-xml 0.37.5 — MIT — Copyright (c) 2016 Alex Crichton
+- quick-xml 0.39.4 — MIT — Copyright (c) 2016 Alex Crichton
+- quote 1.0.47 — MIT — Copyright (c) 2016 Alex Crichton
+- radium 0.7.0 — MIT — Copyright (c) 2016 Alex Crichton
+- rand 0.10.3 — MIT — Copyright (c) 2016 Alex Crichton
+- rand_core 0.10.1 — MIT — Copyright (c) 2016 Alex Crichton
+- rand_xoshiro 0.8.1 — MIT — Copyright (c) 2016 Alex Crichton
+- rangemap 1.8.0 — MIT — Copyright (c) 2016 Alex Crichton
+- rav1e 0.8.1 — BSD-2-Clause — Copyright (c) 2017-2022, the rav1e contributors
+- ravif 0.13.0 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- rayon 1.12.0 — MIT — Copyright (c) 2016 Alex Crichton
+- rayon-core 1.13.0 — MIT — Copyright (c) 2016 Alex Crichton
 - react 18.3.1 — MIT — Copyright (c) Facebook, Inc. and its affiliates.
 - react-dom 18.3.1 — MIT — Copyright (c) Facebook, Inc. and its affiliates.
-- realfft 3.5.0 — MIT — HEnquist
-- ref-cast 1.0.27 — MIT — David Tolnay
-- ref-cast-impl 1.0.27 — MIT — David Tolnay
-- regex 1.13.1 — MIT — Copyright (c) 2014 The Rust Project Developers
-- regex-automata 0.4.18 — MIT — Copyright (c) 2014 The Rust Project Developers
-- regex-syntax 0.8.11 — MIT — Copyright (c) 2014 The Rust Project Developers
-- reqwest 0.12.28 — MIT — Copyright (c) 2016-2025 Sean McArthur
-- rgb 0.8.53 — MIT — Copyright (c) 2019 Kornel
-- ring 0.17.14 — Apache-2.0 AND ISC — Copyright (c) 2009 The Go Authors. All rights reserved.
-- rubato 0.16.2 — MIT — Copyright (c) 2020 Henrik Enquist
-- rustc-hash 2.1.3 — MIT — The Rust Project Developers
-- rustfft 6.4.1 — MIT — Copyright (c) 2015 The RustFFT Developers
-- rustix 1.1.5 — MIT — Dan Gohman, Jakub Konka
-- rustls 0.23.45 — MIT — Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>
-- rustls-pki-types 1.15.1 — MIT — Copyright (c) 2023 Dirkjan Ochtman <dirkjan@ochtman.nl>
-- rustls-webpki 0.103.15 — ISC — Copyright 2015 Brian Smith.
-- rustversion 1.0.23 — MIT — David Tolnay
+- realfft 3.5.0 — MIT — Copyright (c) 2016 Alex Crichton
+- ref-cast 1.0.27 — MIT — Copyright (c) 2016 Alex Crichton
+- ref-cast-impl 1.0.27 — MIT — Copyright (c) 2016 Alex Crichton
+- regex 1.13.1 — MIT — Copyright (c) 2016 Alex Crichton
+- regex-automata 0.4.18 — MIT — Copyright (c) 2016 Alex Crichton
+- regex-syntax 0.8.11 — MIT — Copyright (c) 2016 Alex Crichton
+- reqwest 0.12.28 — MIT — Copyright (c) 2016 Alex Crichton
+- rgb 0.8.53 — MIT — Copyright (c) 2016 Alex Crichton
+- ring 0.17.14 — Apache-2.0 AND ISC — Copyright 2015-2016 Brian Smith.
+- rubato 0.16.2 — MIT — Copyright (c) 2016 Alex Crichton
+- rustc-hash 2.1.3 — MIT — Copyright (c) 2016 Alex Crichton
+- rustfft 6.4.1 — MIT — Copyright (c) 2016 Alex Crichton
+- rustix 1.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- rustls 0.23.45 — MIT — Copyright (c) 2016 Alex Crichton
+- rustls-pki-types 1.15.1 — MIT — Copyright (c) 2016 Alex Crichton
+- rustls-webpki 0.103.15 — ISC — Copyright 2015-2016 Brian Smith.
+- rustversion 1.0.23 — MIT — Copyright (c) 2016 Alex Crichton
 - ryu 1.0.23 — Apache-2.0 — David Tolnay — Declared Apache-2.0 OR BSL-1.0; used under Apache-2.0.
-- safe_arch 1.2.0 — MIT — Copyright (c) 2023 Daniel "Lokathor" Gee.
+- safe_arch 1.2.0 — MIT — Copyright (c) 2016 Alex Crichton
 - scheduler 0.23.2 — MIT — Copyright (c) Facebook, Inc. and its affiliates.
-- scopeguard 1.2.0 — MIT — Copyright (c) 2016-2019 Ulrik Sverdrup "bluss" and scopeguard developers
-- seq-macro 0.3.6 — MIT — David Tolnay
-- serde 1.0.229 — MIT — Erick Tryzelaar, David Tolnay
-- serde_core 1.0.229 — MIT — Erick Tryzelaar, David Tolnay
-- serde_derive 1.0.229 — MIT — Erick Tryzelaar, David Tolnay
-- serde_json 1.0.151 — MIT — Erick Tryzelaar, David Tolnay
-- serde_urlencoded 0.7.1 — MIT — Copyright (c) 2016 Anthony Ramine
+- scopeguard 1.2.0 — MIT — Copyright (c) 2016 Alex Crichton
+- seq-macro 0.3.6 — MIT — Copyright (c) 2016 Alex Crichton
+- serde 1.0.229 — MIT — Copyright (c) 2016 Alex Crichton
+- serde_core 1.0.229 — MIT — Copyright (c) 2016 Alex Crichton
+- serde_derive 1.0.229 — MIT — Copyright (c) 2016 Alex Crichton
+- serde_json 1.0.151 — MIT — Copyright (c) 2016 Alex Crichton
+- serde_urlencoded 0.7.1 — MIT — Copyright (c) 2016 Alex Crichton
+- serde-wasm-bindgen 0.6.5 — MIT — Copyright (c) 2016 Alex Crichton
 - sevenz-rust2 0.23.0 — Apache-2.0
-- sha2 0.10.9 — MIT — Copyright (c) 2006-2009 Graydon Hoare
-- sha2 0.11.0 — MIT — Copyright (c) 2016-2026 The RustCrypto Project Developers
-- signature 2.2.0 — MIT — Copyright (c) 2018-2023 RustCrypto Developers
-- simd_helpers 0.1.0 — MIT — Luca Barbato
-- simd-adler32 0.3.10 — MIT — Copyright (c) [2021] [Marvin Countryman]
-- simdutf8 0.1.5 — MIT — Hans Kratz
-- slab 0.4.12 — MIT — Copyright (c) 2019 Carl Lerche
-- smallvec 1.16.2 — MIT — Copyright (c) 2018 The Servo Project Developers
-- socket2 0.6.5 — MIT — Copyright (c) 2014 Alex Crichton
-- ssimulacra2 0.5.1 — BSD-2-Clause — Copyright (c) 2022-2022, the rav1e contributors
-- stable_deref_trait 1.2.1 — MIT — Copyright (c) 2017 Robert Grosse
-- strength_reduce 0.2.4 — MIT — Copyright (c) 2015 The RustFFT Developers
-- stringprep 0.1.5 — MIT — Copyright (c) 2017 The rust-stringprep Developers
-- strsim 0.11.1 — MIT — Copyright (c) 2015 Danny Guo
-- subtle 2.6.1 — BSD-3-Clause — Copyright (c) 2016-2017 Isis Agora Lovecruft, Henry de Valence. All rights reserved.
+- sha2 0.10.9 — MIT — Copyright (c) 2016 Alex Crichton
+- sha2 0.11.0 — MIT — Copyright (c) 2016 Alex Crichton
+- signature 2.2.0 — MIT — Copyright (c) 2016 Alex Crichton
+- simd_helpers 0.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- simd-adler32 0.3.10 — MIT — Copyright (c) 2016 Alex Crichton
+- simdutf8 0.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- slab 0.4.12 — MIT — Copyright (c) 2016 Alex Crichton
+- smallvec 1.16.2 — MIT — Copyright (c) 2016 Alex Crichton
+- socket2 0.6.5 — MIT — Copyright (c) 2016 Alex Crichton
+- ssimulacra2 0.5.1 — BSD-2-Clause — Copyright (c) 2017-2022, the rav1e contributors
+- stable_deref_trait 1.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- strength_reduce 0.2.4 — MIT — Copyright (c) 2016 Alex Crichton
+- stringprep 0.1.5 — MIT — Copyright (c) 2016 Alex Crichton
+- strsim 0.11.1 — MIT — Copyright (c) 2016 Alex Crichton
+- subtle 2.6.1 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
 - symphonia 0.5.5 — MPL-2.0 — Philip Deljanov — Used unmodified. Source: https://github.com/pdeljanov/Symphonia
 - symphonia-bundle-flac 0.5.5 — MPL-2.0 — Philip Deljanov — Used unmodified. Source: https://github.com/pdeljanov/Symphonia
 - symphonia-bundle-mp3 0.5.5 — MPL-2.0 — Philip Deljanov — Used unmodified. Source: https://github.com/pdeljanov/Symphonia
@@ -360,79 +363,85 @@ is attached to mozjpeg-sys. Development-only tools are not listed.
 - symphonia-format-riff 0.5.5 — MPL-2.0 — Philip Deljanov, dedobbin — Used unmodified. Source: https://github.com/pdeljanov/Symphonia
 - symphonia-metadata 0.5.5 — MPL-2.0 — Philip Deljanov — Used unmodified. Source: https://github.com/pdeljanov/Symphonia
 - symphonia-utils-xiph 0.5.5 — MPL-2.0 — Philip Deljanov — Used unmodified. Source: https://github.com/pdeljanov/Symphonia
-- syn 2.0.119 — MIT — David Tolnay
-- syn 3.0.6 — MIT — David Tolnay
+- syn 2.0.119 — MIT — Copyright (c) 2016 Alex Crichton
+- syn 3.0.6 — MIT — Copyright (c) 2016 Alex Crichton
 - sync_wrapper 1.0.2 — Apache-2.0 — Actyx AG
-- synstructure 0.14.0 — MIT — Copyright 2016 Nika Layzell
-- tap 1.0.1 — MIT — Copyright (c) 2017 Elliot Linder <darfink@gmail.com>
-- tar 0.4.46 — MIT — Copyright (c) The tar-rs Project Contributors
-- tempfile 3.27.0 — MIT — Copyright (c) 2015 Steven Allen
-- termcolor 1.4.1 — MIT — Copyright (c) 2015 Andrew Gallant
-- thiserror 2.0.21 — MIT — David Tolnay
-- thiserror-impl 2.0.21 — MIT — David Tolnay
-- tiff 0.11.3 — MIT — Copyright (c) 2018 PistonDevelopers
-- tinystr 0.8.4 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- tinyvec 1.13.3 — MIT — Lokathor
-- tokio 1.53.1 — MIT — Copyright (c) Tokio Contributors
-- tokio-rustls 0.26.6 — MIT — Copyright (c) 2017 quininer kel
-- tower 0.5.3 — MIT — Copyright (c) 2019 Tower Contributors
-- tower-http 0.6.11 — MIT — Copyright (c) 2019-2021 Tower Contributors
-- tower-layer 0.3.3 — MIT — Copyright (c) 2019 Tower Contributors
-- tower-service 0.3.3 — MIT — Copyright (c) 2019 Tower Contributors
-- tracing 0.1.44 — MIT — Copyright (c) 2019 Tokio Contributors
-- tracing-core 0.1.36 — MIT — Copyright (c) 2019 Tokio Contributors
-- transpose 0.2.3 — MIT — Copyright (c) 2022 The transpose Developers
-- try-lock 0.2.5 — MIT — Copyright (c) 2018-2023 Sean McArthur
-- ts-rs 10.1.0 — MIT — Moritz Bischof
-- ts-rs-macros 10.1.0 — MIT — Moritz Bischof
-- typed-path 0.12.3 — MIT — Chip Senkbeil
-- typenum 1.20.1 — MIT — Copyright (c) 2014 Paho Lurie-Gregg
-- ulid 1.2.1 — MIT — Copyright (c) 2017 Dylan Hart
-- unicode-bidi 0.3.18 — MIT — Copyright (c) 2015 The Rust Project Developers
-- unicode-ident 1.0.26 — MIT AND Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc. — Declared MIT OR Apache-2.0 AND Unicode-3.0; used under MIT AND Unicode-3.0.
-- unicode-normalization 0.1.25 — MIT — Copyright (c) 2015 The Rust Project Developers
-- unicode-properties 0.1.4 — MIT — Copyright (c) 2015 The Rust Project Developers
+- synstructure 0.14.0 — MIT — Copyright (c) 2016 Alex Crichton
+- tap 1.0.1 — MIT — Copyright (c) 2016 Alex Crichton
+- tar 0.4.46 — MIT — Copyright (c) 2016 Alex Crichton
+- tempfile 3.27.0 — MIT — Copyright (c) 2016 Alex Crichton
+- termcolor 1.4.1 — MIT — Copyright (c) 2016 Alex Crichton
+- thiserror 2.0.21 — MIT — Copyright (c) 2016 Alex Crichton
+- thiserror-impl 2.0.21 — MIT — Copyright (c) 2016 Alex Crichton
+- tiff 0.11.3 — MIT — Copyright (c) 2016 Alex Crichton
+- tinystr 0.8.4 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- tinyvec 1.13.3 — MIT — Copyright (c) 2016 Alex Crichton
+- tokio 1.53.1 — MIT — Copyright (c) 2016 Alex Crichton
+- tokio-rustls 0.26.6 — MIT — Copyright (c) 2016 Alex Crichton
+- tower 0.5.3 — MIT — Copyright (c) 2016 Alex Crichton
+- tower-http 0.6.11 — MIT — Copyright (c) 2016 Alex Crichton
+- tower-layer 0.3.3 — MIT — Copyright (c) 2016 Alex Crichton
+- tower-service 0.3.3 — MIT — Copyright (c) 2016 Alex Crichton
+- tracing 0.1.44 — MIT — Copyright (c) 2016 Alex Crichton
+- tracing-core 0.1.36 — MIT — Copyright (c) 2016 Alex Crichton
+- transpose 0.2.3 — MIT — Copyright (c) 2016 Alex Crichton
+- try-lock 0.2.5 — MIT — Copyright (c) 2016 Alex Crichton
+- ts-rs 10.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- ts-rs-macros 10.1.0 — MIT — Copyright (c) 2016 Alex Crichton
+- typed-path 0.12.3 — MIT — Copyright (c) 2016 Alex Crichton
+- typenum 1.20.1 — MIT — Copyright (c) 2016 Alex Crichton
+- ulid 1.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- unicode-bidi 0.3.18 — MIT — Copyright (c) 2016 Alex Crichton
+- unicode-ident 1.0.26 — MIT AND Unicode-3.0 — Copyright (c) 2016 Alex Crichton — Declared MIT OR Apache-2.0 AND Unicode-3.0; used under MIT AND Unicode-3.0.
+- unicode-normalization 0.1.25 — MIT — Copyright (c) 2016 Alex Crichton
+- unicode-properties 0.1.4 — MIT — Copyright (c) 2016 Alex Crichton
 - untrusted 0.9.0 — ISC — Copyright 2015-2016 Brian Smith.
-- url 2.5.8 — MIT — Copyright (c) 2013-2025 The rust-url developers
-- utf8_iter 1.0.4 — MIT — Copyright Mozilla Foundation
-- utf8parse 0.2.2 — MIT — Copyright (c) 2016 Joe Wilm
-- uuid 1.26.1 — MIT — Copyright (c) 2014 The Rust Project Developers
+- url 2.5.8 — MIT — Copyright (c) 2016 Alex Crichton
+- utf8_iter 1.0.4 — MIT — Copyright (c) 2016 Alex Crichton
+- utf8parse 0.2.2 — MIT — Copyright (c) 2016 Alex Crichton
+- uuid 1.26.1 — MIT — Copyright (c) 2016 Alex Crichton
 - v_frame 0.3.9 — BSD-2-Clause — Copyright (c) 2017-2022, the rav1e contributors
-- want 0.3.1 — MIT — Copyright (c) 2018-2019 Sean McArthur
+- want 0.3.1 — MIT — Copyright (c) 2016 Alex Crichton
+- wasm-bindgen 0.2.100 — MIT — Copyright (c) 2016 Alex Crichton
+- wasm-bindgen-backend 0.2.100 — MIT — Copyright (c) 2016 Alex Crichton
+- wasm-bindgen-macro 0.2.100 — MIT — Copyright (c) 2016 Alex Crichton
+- wasm-bindgen-macro-support 0.2.100 — MIT — Copyright (c) 2016 Alex Crichton
+- wasm-bindgen-shared 0.2.100 — MIT — Copyright (c) 2016 Alex Crichton
+- web-time 1.1.0 — MIT — Copyright (c) 2016 Alex Crichton
 - webpki-roots 1.0.9 — CDLA-Permissive-2.0
-- weezl 0.1.12 — MIT — Copyright (c) HeroicKatora 2020
-- weezl 0.2.1 — MIT — Copyright (c) HeroicKatora 2020
-- wide 1.7.1 — MIT — Copyright (c) 2020 Daniel "Lokathor" Gee
-- windows-link 0.2.1 — MIT
-- windows-sys 0.61.2 — MIT
-- writeable 0.6.4 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- wyz 0.5.1 — MIT — Copyright (c) 2018 myrrlyn (Alexander Payne)
-- y4m 0.8.0 — MIT — Copyright (c) 2015-2019 PistonDevelopers
-- yoke 0.8.3 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- yoke-derive 0.8.4 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- yuvxyb 0.4.2 — MIT — Copyright (c) 2022 Josh Holmer
-- yuvxyb-math 0.1.1 — MIT — Copyright (c) 2022 Josh Holmer
-- zerocopy 0.8.59 — MIT — Copyright 2023 The Fuchsia Authors
-- zerocopy-derive 0.8.59 — MIT — Copyright 2023 The Fuchsia Authors
-- zerofrom 0.1.8 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- zerofrom-derive 0.1.8 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- zeroize 1.9.0 — MIT — Copyright (c) 2018-2026 The RustCrypto Project Developers
-- zerotrie 0.2.5 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- zerovec 0.11.8 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- zerovec-derive 0.11.6 — Unicode-3.0 — Copyright © 2020-2024 Unicode, Inc.
-- zip 8.6.0 — MIT — Copyright (c) 2014 Mathijs van de Nes
+- weezl 0.1.12 — MIT — Copyright (c) 2016 Alex Crichton
+- weezl 0.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- wide 1.7.1 — MIT — Copyright (c) 2016 Alex Crichton
+- windows-link 0.2.1 — MIT — Copyright (c) 2016 Alex Crichton
+- windows-sys 0.61.2 — MIT — Copyright (c) 2016 Alex Crichton
+- writeable 0.6.4 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- wyz 0.5.1 — MIT — Copyright (c) 2016 Alex Crichton
+- y4m 0.8.0 — MIT — Copyright (c) 2016 Alex Crichton
+- yoke 0.8.3 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- yoke-derive 0.8.4 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- yuvxyb 0.4.2 — MIT — Copyright (c) 2016 Alex Crichton
+- yuvxyb-math 0.1.1 — MIT — Copyright (c) 2016 Alex Crichton
+- zerocopy 0.8.59 — MIT — Copyright (c) 2016 Alex Crichton
+- zerocopy-derive 0.8.59 — MIT — Copyright (c) 2016 Alex Crichton
+- zerofrom 0.1.8 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- zerofrom-derive 0.1.8 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- zeroize 1.9.0 — MIT — Copyright (c) 2016 Alex Crichton
+- zerotrie 0.2.5 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- zerovec 0.11.8 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- zerovec-derive 0.11.6 — Unicode-3.0 — Copyright © 1991-2023 Unicode, Inc.
+- zip 8.6.0 — MIT — Copyright (c) 2016 Alex Crichton
 - zlib-rs 0.6.8 — Zlib
-- zmij 1.0.23 — MIT — David Tolnay
+- zmij 1.0.23 — MIT — Copyright (c) 2016 Alex Crichton
 - zod 4.6.5 — MIT — Copyright (c) 2025 Colin McDonnell
-- zopfli 0.8.3 — Apache-2.0 — Copyright 2011 Google Inc.
-- zstd 0.14.0 — BSD-3-Clause — Copyright (c) 2026, Alexandre Bury
-- zstd-safe 8.0.0 — BSD-3-Clause — Copyright (c) 2026, Alexandre Bury
-- zstd-sys 2.1.0+zstd.1.5.7 — BSD-3-Clause — Copyright (c) 2026, Alexandre Bury
-- zune-core 0.4.12 — MIT
-- zune-core 0.5.3 — MIT — Copyright (c) zune-image developers
-- zune-inflate 0.2.54 — MIT
-- zune-jpeg 0.5.15 — MIT — Copyright (c) zune-image developers
-- zune-png 0.4.10 — MIT — caleb
+- zopfli 0.8.3 — Apache-2.0
+- zstd 0.14.0 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- zstd-safe 8.0.0 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- zstd-sys 2.1.0+zstd.1.5.7 — BSD-3-Clause — Copyright (c) 2020, Cloudflare, Inc.
+- zune-core 0.4.12 — MIT — Copyright (c) 2016 Alex Crichton
+- zune-core 0.5.3 — MIT — Copyright (c) 2016 Alex Crichton
+- zune-inflate 0.2.54 — MIT — Copyright (c) 2016 Alex Crichton
+- zune-jpeg 0.5.15 — MIT — Copyright (c) 2016 Alex Crichton
+- zune-png 0.4.10 — MIT — Copyright (c) 2016 Alex Crichton
 
 ## Patent licences
 
