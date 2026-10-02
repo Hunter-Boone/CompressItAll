@@ -64,6 +64,22 @@ function Shell({ licenses }: { licenses: LicensesData | (() => Promise<LicensesD
     }
   }, [state.modal, licenses, licenseData.groups.length]);
 
+  // Updates (DESIGN 6.3): check after launch and every 6 h; never restart during a job.
+  const [update, setUpdate] = useState<{ version?: string } | null>(null);
+  useEffect(() => {
+    if (!ready || !host.updates || !settings.updatesAuto) return;
+    let cancelled = false;
+    const check = async () => {
+      try {
+        const r = await host.updates!.check();
+        if (!cancelled && r.available) setUpdate({ version: r.version });
+      } catch { /* offline or endpoint missing: nothing to do */ }
+    };
+    const first = window.setTimeout(check, 5000);
+    const every = window.setInterval(check, 6 * 60 * 60 * 1000);
+    return () => { cancelled = true; window.clearTimeout(first); window.clearInterval(every); };
+  }, [ready, host, settings.updatesAuto]);
+
   const finishTour = useCallback(() => { setTourStep(null); updateSettings({ tourVersionSeen: TOUR_VERSION, welcomeSeen: true }); }, [updateSettings]);
   const startTour = () => { dispatch({ type: "modal", modal: null }); setTourStep(0); };
 
@@ -192,6 +208,13 @@ function Shell({ licenses }: { licenses: LicensesData | (() => Promise<LicensesD
       {state.modal === "welcome" && <WelcomeCard onTour={() => { dispatch({ type: "modal", modal: null }); updateSettings({ welcomeSeen: true }); setTourStep(0); }} onSkip={() => { dispatch({ type: "modal", modal: null }); updateSettings({ welcomeSeen: true, tourVersionSeen: TOUR_VERSION }); }} />}
       {tourStep !== null && <SpotlightTutorial steps={steps} stepIndex={tourStep} onStepIndexChange={setTourStep} onFinish={finishTour} />}
       {state.toast && <Toast message={state.toast} />}
+      {update && state.phase !== "running" && (
+        <div className="smg-fade-in fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-card border border-edge bg-surface-overlay px-4 py-3 shadow-2" role="status" data-testid="update-ready">
+          <span>Update ready{update.version ? ` (${update.version})` : ""}. Restart Smidge to finish.</span>
+          <button className="smg-btn smg-btn--primary smg-btn--sm" onClick={() => host.updates?.install()}>Restart now</button>
+          <button className="smg-btn smg-btn--ghost smg-btn--sm" onClick={() => setUpdate(null)}>Later</button>
+        </div>
+      )}
     </div>
   );
 }
