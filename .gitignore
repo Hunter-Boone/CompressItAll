@@ -22,6 +22,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 # Generated outputs
+/apps/web/public/engine/
 /target-e2e
 /e2e/**/test-results
 /e2e/**/playwright-report

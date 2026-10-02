@@ -1,0 +1,24 @@
+[package]
+name = "cia-wasm"
+description = "Smidge engine for the web app: wasm-bindgen exports that run cia-engine inside a Web Worker (DESIGN.md 2.2, 2.5). Byte buffers live in the worker; outputs are handed to OPFS by the JS side."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+cia-engine = { path = "../cia-engine", default-features = false }
+cia-archive = { path = "../cia-archive" }
+cia-wasm-libc = { path = "../cia-wasm-libc", features = ["mozjpeg", "libwebp", "libdeflate"] }
+wasm-bindgen = "=0.2.100"
+js-sys = "0.3"
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+getrandom = { workspace = true }
+log = { workspace = true }

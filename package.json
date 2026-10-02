@@ -12,18 +12,20 @@
     "typecheck": "for p in packages/api-types packages/engine-client packages/ui apps/web apps/site; do echo \"== $p\"; npx tsc -p $p/tsconfig.json --noEmit || exit 1; done",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
-    "licenses:npm": "license-checker-rseidelsohn --production --json --excludePrivatePackages"
+    "licenses:npm": "license-checker-rseidelsohn --production --json --excludePrivatePackages",
+    "e2e:web": "playwright test -c e2e/web/playwright.config.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "typescript": "^5.6.3",
-    "vitest": "^2.1.8",
-    "eslint": "^9.14.0",
     "@eslint/js": "^9.14.0",
-    "typescript-eslint": "^8.15.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^22.10.0",
+    "eslint": "^9.14.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
     "license-checker-rseidelsohn": "^4.4.2",
     "prettier": "^3.3.3",
-    "eslint-plugin-react-hooks": "^5.1.0"
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0",
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=20"

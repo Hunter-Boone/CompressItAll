@@ -30,7 +30,7 @@ pub fn sizes(
 }
 
 pub fn run(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) -> PlannerOutcome {
-    let t0 = std::time::Instant::now();
+    let t0 = crate::now_ms();
     let img = match cia_image::decode(bytes) {
         Ok(i) => i,
         Err(cia_image::ImageError::Unsupported(what)) => {
@@ -48,7 +48,7 @@ pub fn run(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) -> Pl
             }
         }
     };
-    log::debug!("decode {} ms", t0.elapsed().as_millis());
+    log::debug!("decode {} ms", crate::now_ms().saturating_sub(t0));
     let o = opts(ctx, budget);
     match cia_image::compress(&img, bytes, &o, ctx.cancel, ctx.progress) {
         Ok(ImageOutcome::Encoded(r)) => {
