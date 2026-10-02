@@ -1,0 +1,4 @@
+# Supabase CLI project settings for `supabase db push` against the dev project (smidge-dev).
+# Link with `supabase link --project-ref <ref>`; nothing in here is secret.
+[db]
+major_version = 15

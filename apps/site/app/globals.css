@@ -1,0 +1,45 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource-variable/bricolage-grotesque";
+@import "@cia/tokens/theme.css";
+@import "@cia/tokens/base.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The site reads larger than the app: body 1rem, headings scaled up (DESIGN.md 4.1 tone rules apply). */
+body { font-size: 1rem; line-height: 1.6rem; font-weight: 400; }
+h1 { font-size: 2.5rem; line-height: 2.9rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; line-height: 2.1rem; letter-spacing: -0.01em; }
+h3 { font-size: 1.1rem; line-height: 1.6rem; }
+@media (min-width: 768px) {
+  h1 { font-size: 3.25rem; line-height: 3.6rem; }
+}
+
+@layer components {
+  .smg-btn {
+    @apply inline-flex items-center justify-center gap-2 h-11 px-5 rounded-control font-medium select-none transition-colors duration-fast ease-standard disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap text-base;
+  }
+  .smg-btn--primary { @apply bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-pressed shadow-subtle; }
+  .smg-btn--secondary { @apply bg-secondary text-secondary-foreground border border-edge hover:bg-secondary-hover active:bg-secondary-pressed; }
+  .smg-btn--ghost { @apply bg-transparent text-on-surface-muted hover:bg-surface-hover hover:text-on-surface; }
+  .smg-btn--danger { @apply bg-danger text-danger-foreground hover:bg-danger-hover active:bg-danger-pressed; }
+  .smg-btn--sm { @apply h-9 px-3 text-sm; }
+  .smg-card { @apply bg-surface-card border border-subtle rounded-card shadow-subtle; }
+  .smg-input {
+    @apply h-11 w-full rounded-control border border-edge bg-surface-sunken px-3 text-base text-on-surface placeholder:text-on-surface-subtle focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary;
+  }
+  .smg-label { @apply text-xs font-semibold uppercase tracking-wide text-on-surface-subtle; }
+  .smg-link { @apply text-primary underline-offset-4 hover:underline; }
+  .smg-prose { @apply max-w-prose text-on-surface; }
+  .smg-prose h2 { @apply mt-10 mb-3; }
+  .smg-prose h3 { @apply mt-6 mb-2; }
+  .smg-prose p { @apply mb-4 text-on-surface-muted; }
+  .smg-prose ul { @apply mb-4 list-disc pl-6 text-on-surface-muted; }
+  .smg-prose li { @apply mb-1; }
+  .smg-prose code { @apply rounded bg-surface-sunken px-1 py-0.5 text-sm; }
+  .smg-key { @apply font-mono text-xl tracking-wider rounded-control bg-surface-sunken px-4 py-3 text-center select-all; }
+  .smg-mark { @apply inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary; }
+  .smg-mark::after { content: ""; @apply block h-2.5 w-2.5 rounded-sm bg-primary-foreground; }
+}

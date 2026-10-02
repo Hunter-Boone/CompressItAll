@@ -1,0 +1,9 @@
+-- GENERATED FILE PLACEHOLDER.
+--
+-- This file is regenerated from the dev project, never edited by hand:
+--
+--   supabase db dump --schema-only > apps/site/supabase/schema.sql
+--
+-- CI's `site` job fails when the dump differs from this file, which is how a migration that
+-- was never applied gets noticed (docs/DESIGN.md 5.9). Until the first Supabase project exists,
+-- the schema is the sum of supabase/migrations/*.sql applied in order.
