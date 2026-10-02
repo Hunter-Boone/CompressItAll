@@ -25,8 +25,8 @@ def ssh(machine, cmd, check=True):
     return subprocess.run([sys.executable, str(LAB / "lab.py"), "ssh", machine, "--", cmd], check=check)
 
 
-def remote_dir(machine, repo):
-    s = subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
+def remote_dir(machine, repo, sha=None):
+    s = sha or subprocess.check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True).strip()
     home = "C:/Users/tester" if machine == "windows" else "~"
     return f"{home}/work/compressitall-{s}"
 
@@ -38,12 +38,13 @@ def main():
     ap.add_argument("--repo", default=str(HERE))
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--presets", default="smoke")
+    ap.add_argument("--sha", help="full commit of the synced checkout (default: local HEAD)")
     a = ap.parse_args()
     if a.action == "status":
         return subprocess.call([sys.executable, str(LAB / "lab.py"), "status"])
     if not a.machine:
         ap.error("machine required")
-    rd = remote_dir(a.machine, a.repo)
+    rd = remote_dir(a.machine, a.repo, a.sha)
     if a.action == "sync":
         return subprocess.call(["bash", str(LAB / "scripts" / "sync-checkout.sh"), a.machine, a.repo, "compressitall"])
     if a.machine == "windows":
