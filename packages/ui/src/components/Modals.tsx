@@ -208,5 +208,5 @@ export function FfmpegSetupModal() {
 }
 
 export function Toast({ message }: { message: string }) {
-  return <div className="smg-fade-in fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-pill border border-default bg-surface-overlay px-4 py-2 shadow-2" role="status">{message}</div>;
+  return <div className="smg-fade-in fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-pill border border-edge bg-surface-overlay px-4 py-2 shadow-2" role="status">{message}</div>;
 }

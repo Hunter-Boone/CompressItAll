@@ -24,7 +24,7 @@ export default function AdvancedDrawer() {
   return createPortal(
     <div className="fixed inset-0 z-40" data-testid="advanced-drawer">
       <div className="absolute inset-0 bg-scrim" onClick={close} />
-      <aside className="smg-fade-in absolute bottom-0 right-0 top-0 flex w-full max-w-[420px] flex-col border-l border-default bg-surface-overlay shadow-3 max-sm:top-auto max-sm:max-h-[85vh] max-sm:max-w-none max-sm:rounded-t-panel max-sm:border-l-0 max-sm:border-t" role="dialog" aria-label="Advanced options">
+      <aside className="smg-fade-in absolute bottom-0 right-0 top-0 flex w-full max-w-[420px] flex-col border-l border-edge bg-surface-overlay shadow-3 max-sm:top-auto max-sm:max-h-[85vh] max-sm:max-w-none max-sm:rounded-t-panel max-sm:border-l-0 max-sm:border-t" role="dialog" aria-label="Advanced options">
         <div className="flex items-center justify-between border-b border-subtle px-5 py-4">
           <h2 className="font-display text-type-2">Advanced</h2>
           <button className="smg-btn smg-btn--ghost smg-btn--sm !px-2" onClick={close} aria-label="Close"><X size={16} /></button>

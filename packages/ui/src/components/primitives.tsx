@@ -12,7 +12,7 @@ export function Modal({ title, onClose, children, width = 520, testId }: { title
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title} data-testid={testId}>
       <div className="absolute inset-0 bg-scrim" onClick={onClose} />
-      <div className="smg-fade-in relative max-h-[90vh] w-full overflow-auto rounded-panel border border-default bg-surface-overlay p-6 shadow-3" style={{ maxWidth: width }}>
+      <div className="smg-fade-in relative max-h-[90vh] w-full overflow-auto rounded-panel border border-edge bg-surface-overlay p-6 shadow-3" style={{ maxWidth: width }}>
         {title && (
           <div className="mb-4 flex items-start justify-between gap-4">
             <h2 className="font-display text-type-2">{title}</h2>
@@ -60,5 +60,5 @@ export function Spinner({ size = 16 }: { size?: number }) {
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded border border-default bg-surface-sunken px-1.5 py-0.5 font-sans text-[11px] text-on-surface-muted">{children}</kbd>;
+  return <kbd className="rounded border border-edge bg-surface-sunken px-1.5 py-0.5 font-sans text-[11px] text-on-surface-muted">{children}</kbd>;
 }

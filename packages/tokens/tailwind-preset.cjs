@@ -7,7 +7,7 @@ module.exports = {
       colors: {
         background: v("surface-base"),
         surface: { DEFAULT: v("surface-base"), base: v("surface-base"), card: v("surface-card"), overlay: v("surface-overlay"), sunken: v("surface-sunken"), hover: v("surface-hover"), recessed: v("surface-recessed"), elevated: v("surface-elevated"), 1: v("surface-1"), 2: v("surface-2"), 3: v("surface-3"), 4: v("surface-4"), 5: v("surface-5") },
-        border: { DEFAULT: v("border-subtle"), subtle: v("border-subtle"), default: v("border-default"), strong: v("border-strong") },
+        border: { DEFAULT: v("border-subtle"), subtle: v("border-subtle"), edge: v("border-default"), strong: v("border-strong") },
         "on-surface": { DEFAULT: v("on-surface"), muted: v("on-surface-muted"), subtle: v("on-surface-subtle"), disabled: v("on-surface-disabled") },
         primary: { DEFAULT: v("primary"), hover: v("primary-hover"), pressed: v("primary-pressed"), disabled: v("primary-disabled"), foreground: v("on-primary"), container: v("primary-container"), "container-foreground": v("on-primary-container") },
         secondary: { DEFAULT: v("secondary"), hover: v("secondary-hover"), pressed: v("secondary-pressed"), disabled: v("secondary-disabled"), foreground: v("on-secondary"), container: v("secondary-container"), "container-foreground": v("on-secondary-container") },
@@ -18,7 +18,8 @@ module.exports = {
         info: { DEFAULT: v("info"), foreground: v("on-info"), container: v("info-container"), "container-foreground": v("on-info-container") },
         scrim: v("scrim"),
       },
-      ringColor: { DEFAULT: v("focus-ring") },
+      borderColor: { DEFAULT: v("border-subtle"), subtle: v("border-subtle"), edge: v("border-default"), strong: v("border-strong"), primary: v("primary"), "danger-border": v("danger-border"), "success-border": v("success-border") },
+      ringColor: { DEFAULT: v("focus-ring"), primary: v("primary") },
       boxShadow: { subtle: v("shadow-subtle"), 1: v("shadow-1"), 2: v("shadow-2"), 3: v("shadow-3") },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],

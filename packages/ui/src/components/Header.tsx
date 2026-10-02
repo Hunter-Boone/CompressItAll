@@ -23,7 +23,7 @@ export default function Header() {
       <Wordmark />
       <div className="flex items-center gap-2">
         {free && (
-          <button className="rounded-pill border border-default bg-surface-card px-3 py-1 text-xs font-medium text-on-surface-muted hover:border-strong hover:text-on-surface" onClick={() => dispatch({ type: "modal", modal: "upgrade" })} data-testid="allowance-pill">
+          <button className="rounded-pill border border-edge bg-surface-card px-3 py-1 text-xs font-medium text-on-surface-muted hover:border-strong hover:text-on-surface" onClick={() => dispatch({ type: "modal", modal: "upgrade" })} data-testid="allowance-pill">
             {allowance.remaining === 1 ? "1 free file left today" : `${allowance.remaining} free files left today`}
           </button>
         )}

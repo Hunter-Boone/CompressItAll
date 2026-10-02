@@ -32,7 +32,7 @@ function TierMenu({ group, current, onPick, onClose }: { group: PresetGroup; cur
     return () => { document.removeEventListener("mousedown", onDoc); window.removeEventListener("keydown", onKey); };
   }, [onClose]);
   return (
-    <div ref={ref} role="menu" className="smg-fade-in absolute left-0 top-full z-30 mt-1 min-w-[260px] rounded-card border border-default bg-surface-overlay p-1 shadow-2" data-testid="tier-menu">
+    <div ref={ref} role="menu" className="smg-fade-in absolute left-0 top-full z-30 mt-1 min-w-[260px] rounded-card border border-edge bg-surface-overlay p-1 shadow-2" data-testid="tier-menu">
       {group.tiers.map((t) => (
         <button key={t.id} role="menuitemradio" aria-checked={t.id === current.id} className={clsx("flex w-full items-center justify-between gap-3 rounded-control px-3 py-2 text-left hover:bg-surface-hover", t.id === current.id && "bg-primary-container text-primary-container-foreground")} onClick={() => { onPick(t); onClose(); }}>
           <span>{t.tier_label}</span>
