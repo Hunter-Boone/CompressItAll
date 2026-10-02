@@ -85,6 +85,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cia-video-plan"
+version = "0.1.0"
+dependencies = [
+ "cia-core",
+ "serde",
+ "serde_json",
+ "ts-rs",
+]
+
+[[package]]
 name = "cia-wasm-libc"
 version = "0.1.0"
 

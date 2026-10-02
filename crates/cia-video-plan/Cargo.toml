@@ -1,0 +1,18 @@
+[package]
+name = "cia-video-plan"
+description = "Smidge video planner: pure budget, ladder, audio, refusal and retry math shared by the native FFmpeg runner and the browser WebCodecs pipeline. No I/O, no ffmpeg, no unsafe."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+serde.workspace = true
+ts-rs.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
