@@ -1,0 +1,40 @@
+[package]
+name = "cia-license"
+description = "Smidge licensing: product key checksum, Ed25519 license token verification, offline validation, device id (native feature). Builds for wasm32 without the native feature."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[[bin]]
+name = "cia-keygen"
+path = "src/bin/keygen.rs"
+required-features = ["keygen"]
+
+[features]
+default = []
+# Device id and hostname (registry / ioreg / machine-id). Never on wasm.
+native = ["dep:data-encoding", "dep:gethostname", "dep:winreg"]
+# Token signing. Only the server and the test-vector generator need it.
+sign = []
+# `cia-keygen` binary.
+keygen = ["sign", "dep:getrandom"]
+# Adds the "test" public key to PUBLIC_KEYS so e2e builds accept vector tokens.
+e2e = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+sha2.workspace = true
+base64.workspace = true
+ed25519-dalek = { version = "2", default-features = false, features = ["std", "zeroize"] }
+data-encoding = { version = "2", optional = true }
+gethostname = { version = "1", optional = true }
+getrandom = { workspace = true, optional = true }
+
+[target.'cfg(windows)'.dependencies]
+winreg = { version = "0.56", optional = true }

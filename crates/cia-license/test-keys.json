@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "Ed25519 seeds for development and tests. NOTHING in this file is secret.",
+    "The '2026-10' entry is a PLACEHOLDER so dev builds and the preview site can sign and verify tokens.",
+    "Before launch: run `cargo xtask keygen`, put the new public key in crates/cia-license/src/keys.rs under kid 2026-10,",
+    "set LICENSE_SIGNING_KEY on Vercel to the printed seed, and DELETE the 2026-10 entry below. The real seed must never be committed.",
+    "The 'test' entry signs packages/api-types/test-vectors/license-tokens.json and is only trusted in test / e2e builds."
+  ],
+  "keys": [
+    {
+      "kid": "2026-10",
+      "placeholder": true,
+      "seed_b64": "2tra5s86pLEOHHSMTrQSWD+ADnw31jgkDkeNGp2IqfM=",
+      "public_key_hex": "43989ddd3c48fb7399f1938617565f09f1dd629800f4e6d75dff3a87baa6a664"
+    },
+    {
+      "kid": "test",
+      "placeholder": false,
+      "seed_b64": "wm1Yc2d/fE2svEfkca5c5gNiHtEbb2iaq+lNLXqXsyg=",
+      "public_key_hex": "718dd1fb15c4f5bd97e11f4d21c2a97f1548e625a4af24d6e37c80db315cba97"
+    }
+  ]
+}
