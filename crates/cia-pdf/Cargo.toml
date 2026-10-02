@@ -1,0 +1,24 @@
+[package]
+name = "cia-pdf"
+description = "Smidge PDF optimiser: lossless structural pass plus a global (quality, pixel cap) ladder over the embedded images. Bytes in, bytes out."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+thiserror.workspace = true
+log.workspace = true
+sha2.workspace = true
+lopdf = { version = "0.45", default-features = false, features = ["wasm_js"] }
+flate2 = { version = "1.1", default-features = false, features = ["zlib-rs"] }
+zopfli = { version = "0.8", default-features = false, features = ["std", "zlib"] }
+zune-jpeg = { version = "0.5", default-features = false, features = ["std"] }
+fast_image_resize = { version = "6", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+jpeg-encoder = { version = "0.7", default-features = false, features = ["std"] }
