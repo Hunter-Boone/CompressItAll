@@ -67,6 +67,11 @@ pub fn run(
     }
     let mut rows: Vec<Row> = Vec::new();
     let mut violations = 0;
+    // Whether this machine's FFmpeg has any working H.264 encoder; a NoEncoder refusal is only
+    // the expected outcome when it does not.
+    let has_h264 = cia_engine::video_ffmpeg::FfmpegBackend::locate(&super::app_data(cli))
+        .map(|ff| !ff.report.chain(true, false).is_empty())
+        .unwrap_or(false);
     for file in &files {
         for pid in &preset_ids {
             let job_id = cia_core::new_id();
@@ -150,7 +155,7 @@ pub fn run(
                         refusal.smallest_bytes,
                         refusal.message.clone(),
                         None,
-                        expected_refusal(&name, pid, &refusal.code),
+                        expected_refusal(&name, pid, &refusal.code, has_h264),
                         format!("{:?}", refusal.code),
                         false,
                     ),
@@ -300,7 +305,7 @@ fn ffprobe_ok(path: &str) -> bool {
 }
 
 /// Refusals that the fixture set expects (the design's expectations.toml, inline for now).
-fn expected_refusal(name: &str, preset: &str, code: &RefusalCode) -> bool {
+fn expected_refusal(name: &str, preset: &str, code: &RefusalCode, has_h264: bool) -> bool {
     let n = name.to_ascii_lowercase();
     match code {
         RefusalCode::Encrypted => n.contains("encrypted"),
@@ -314,6 +319,8 @@ fn expected_refusal(name: &str, preset: &str, code: &RefusalCode) -> bool {
             n.ends_with(".rar") || n.contains("heic") || n.contains("avif")
         }
         RefusalCode::NeedsFfmpeg => true,
+        // Only honest when this machine's FFmpeg really has no working H.264 encoder.
+        RefusalCode::NoEncoder { .. } => !has_h264,
         _ => false,
     }
 }

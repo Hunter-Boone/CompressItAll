@@ -59,6 +59,10 @@ pub fn refusal_message(
             Kind::Video => "This browser can't read this video. Try Chrome, Edge or Safari, or the desktop app.".to_string(),
             _ => "This browser can't open this kind of file. Try Chrome, Edge or Safari, or the desktop app.".to_string(),
         },
+        RefusalCode::NoEncoder { codec } => {
+            let name = if codec == "h264" { "H.264" } else { codec.as_str() };
+            format!("This computer has no {name} video encoder that {BRAND} can use, and this destination needs {name}. Pick Discord or Custom size to make a WebM file instead.")
+        }
         RefusalCode::UnsupportedInput { what } => {
             if what == "heic" {
                 "This browser can't open iPhone HEIC photos. Use Safari, or the desktop app.".to_string()
@@ -310,6 +314,18 @@ mod tests {
             "Smidge can't make this kind of file smaller. It's 48.2 MB and the limit is 20 MB."
         );
         let s = refusal_message(&RefusalCode::Encrypted, None, None, Kind::Pdf);
+        let n = refusal_message(
+            &RefusalCode::NoEncoder {
+                codec: "h264".into(),
+            },
+            None,
+            None,
+            Kind::Video,
+        );
+        assert!(
+            n.contains("no H.264 video encoder") && n.contains("WebM"),
+            "{n}"
+        );
         assert_eq!(
             s,
             "This file is password-protected, so Smidge can't change it."

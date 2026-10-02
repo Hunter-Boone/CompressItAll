@@ -1130,6 +1130,17 @@ impl Engine {
                 message: None,
                 closest_bytes: m.trim_start_matches("over:").parse().ok(),
             }),
+            Err(EngineError::Other(m)) if m.starts_with("no_encoder") => {
+                // No working encoder for the required codec and WebM not allowed here (3.5.6 step 5).
+                log::warn!("video backend has no usable H.264 encoder: {m}");
+                Ok(PlannerOutcome::Refused {
+                    code: RefusalCode::NoEncoder {
+                        codec: "h264".into(),
+                    },
+                    smallest_bytes: None,
+                    attempts: vec![],
+                })
+            }
             Err(EngineError::Other(m)) => {
                 // The backend reports "<code>: <message>"; keep the code when it is one we know.
                 let (code, rest) = m.split_once(": ").unwrap_or(("encoder_crash", m.as_str()));

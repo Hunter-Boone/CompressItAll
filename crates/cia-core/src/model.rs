@@ -542,14 +542,26 @@ pub struct Artifact {
 #[serde(tag = "type", rename_all = "snake_case")]
 #[ts(export)]
 pub enum RefusalCode {
-    TooLongForLimit { max_duration_ms: u64 },
+    TooLongForLimit {
+        max_duration_ms: u64,
+    },
     BelowQualityFloor,
     CannotShrinkType,
-    TooManyFilesForMessage { max: u32 },
+    TooManyFilesForMessage {
+        max: u32,
+    },
     TotalTooBig,
     NeedsFfmpeg,
-    BrowserLacksCodec { codec: String },
-    UnsupportedInput { what: String },
+    BrowserLacksCodec {
+        codec: String,
+    },
+    /// Desktop: no usable encoder for the codec the destination requires (DESIGN 3.5.6 step 5).
+    NoEncoder {
+        codec: String,
+    },
+    UnsupportedInput {
+        what: String,
+    },
     Encrypted,
 }
 

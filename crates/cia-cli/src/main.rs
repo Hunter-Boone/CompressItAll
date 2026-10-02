@@ -127,7 +127,7 @@ fn short_outcome(o: &ItemOutcome) -> String {
     }
 }
 
-fn app_data(cli: &Cli) -> PathBuf {
+pub(crate) fn app_data(cli: &Cli) -> PathBuf {
     cli.app_data.clone().unwrap_or_else(|| {
         dirs::data_dir()
             .unwrap_or_else(std::env::temp_dir)
@@ -425,12 +425,24 @@ fn main() -> Result<()> {
                 println!("{}", serde_json::to_string_pretty(&summary)?);
             } else {
                 println!("\n{}", summary.headline);
-                println!(
-                    "{} → {} in {} ms",
-                    cia_core::format::mb(summary.input_bytes),
-                    cia_core::format::mb(summary.total_bytes),
-                    summary.elapsed_ms
-                );
+                for (id, o) in &summary.outcomes {
+                    if !matches!(
+                        o,
+                        ItemOutcome::Fitted { .. } | ItemOutcome::KeptOriginal { .. }
+                    ) {
+                        println!("  {id}: {}", short_outcome(o));
+                    }
+                }
+                if summary.total_bytes == 0 {
+                    println!("nothing written ({} ms)", summary.elapsed_ms);
+                } else {
+                    println!(
+                        "{} → {} in {} ms",
+                        cia_core::format::mb(summary.input_bytes),
+                        cia_core::format::mb(summary.total_bytes),
+                        summary.elapsed_ms
+                    );
+                }
                 if let Some(p) = &summary.packaged {
                     println!("packaged: {} ({} bytes)", p.file_name, p.bytes);
                 }
