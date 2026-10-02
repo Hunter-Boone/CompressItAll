@@ -1,0 +1,33 @@
+[package]
+name = "cia-archive"
+description = "Smidge archive writers and readers: zip, 7z, tar.zst, tar.xz output; zip, 7z, tar(.gz/.bz2/.xz/.zst) and gz input. Bytes in, bytes out; no job model."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["xz"]
+# Filesystem helpers (read a path, extract to a directory). Off for wasm.
+fs = []
+# xz/tar.xz read and write via liblzma (C). Pure-Rust everything else.
+xz = ["dep:liblzma"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+thiserror.workspace = true
+crc32fast = "1.5"
+flate2 = { version = "1.1", default-features = false, features = ["zlib-rs"] }
+zopfli = { version = "0.8", default-features = false, features = ["std"] }
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+sevenz-rust2 = { version = "0.23", default-features = false, features = ["compress"] }
+tar = { version = "0.4.46", default-features = false }
+zstd = { version = "0.14", default-features = false }
+bzip2 = "0.6"
+liblzma = { version = "0.4.8", default-features = false, optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+liblzma = { version = "0.4.8", default-features = false, features = ["wasm"], optional = true }
