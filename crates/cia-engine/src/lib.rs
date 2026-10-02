@@ -75,6 +75,21 @@ pub trait VideoBackend: Send + Sync {
     ) -> Result<VideoTranscodeResult, EngineError>;
     fn encoder_kind(&self, faster: bool) -> cia_video_plan::EncoderKind;
     fn capabilities(&self) -> Option<FfmpegCapabilities>;
+    /// Host capability check before planning (DESIGN.md 3.5.10 step 1). Runs
+    /// after the target has been picked from the preset and may switch it (a
+    /// browser without an H.264 encoder gets VP9 WebM when the preset allows
+    /// it) or refuse the item with a code and suggestions. Native FFmpeg has
+    /// its own encoder chain and keeps the default.
+    fn check_support(
+        &self,
+        _source: &SourceRef,
+        _probe: &cia_video_plan::VideoProbe,
+        target: cia_video_plan::Target,
+        _allowed: &[cia_core::presets::VideoFormat],
+        _options: &cia_video_plan::PlanOptions,
+    ) -> Result<cia_video_plan::Target, (RefusalCode, Vec<Suggestion>)> {
+        Ok(target)
+    }
     /// Duration and channel count of an audio-only file the pure-Rust decoders cannot read.
     fn probe_audio(&self, source: &SourceRef) -> Result<(u64, u16, u32), EngineError> {
         self.probe(source).map(|p| {
@@ -97,6 +112,23 @@ pub trait VideoBackend: Send + Sync {
     ) -> Result<Vec<u8>, EngineError> {
         Err(EngineError::Unsupported("audio encoder".into()))
     }
+}
+
+/// What a host that transcodes video outside the engine (the web app's
+/// WebCodecs worker) needs for one item: the same budget, target and options
+/// `run_video` would hand the backend. See [`Engine::video_work`].
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct VideoWork {
+    pub item_id: String,
+    pub source: SourceRef,
+    /// Always concrete: Smaller mode aims at 60 percent of the source, as the native backend does.
+    pub budget: cia_video_plan::Budget,
+    pub target: cia_video_plan::Target,
+    pub options: cia_video_plan::PlanOptions,
+    pub faster: bool,
+    pub allowed: Vec<cia_core::presets::VideoFormat>,
+    /// `hard_bytes` for the verification size check (None in Smaller mode).
+    pub hard_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone)]

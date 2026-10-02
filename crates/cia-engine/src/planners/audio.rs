@@ -295,6 +295,7 @@ pub fn run(
                 }
                 #[cfg(not(feature = "opus"))]
                 {
+                    let _ = src;
                     Err("opus encoder not available on this host".to_string())
                 }
             }

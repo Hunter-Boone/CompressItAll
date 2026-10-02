@@ -1076,6 +1076,7 @@ dependencies = [
  "cia-archive",
  "cia-core",
  "cia-engine",
+ "cia-video-plan",
  "cia-wasm-libc",
  "console_error_panic_hook",
  "getrandom 0.3.4",

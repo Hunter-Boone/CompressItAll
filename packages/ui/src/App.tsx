@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { X } from "lucide-react";
 import type { EngineHost, EngineEvent, Goal, InputItem, InputSource, Plan, PlanRequest, Suggestion } from "@cia/engine-client";
 import { presetById, resolveCustom, resolvePreset } from "@cia/engine-client";
 import { clsx } from "clsx";
@@ -34,6 +35,8 @@ export function App({ host, licenses }: AppProps) {
   );
 }
 
+const VIDEO_BANNER_KEY = "cia.videoBannerDismissed";
+
 function goalFor(dest: Destination): Goal {
   switch (dest.type) {
     case "preset": return { type: "fit", preset_id: dest.presetId, limit: resolvePreset(presetById(dest.presetId)!) };
@@ -49,6 +52,10 @@ function Shell({ licenses }: { licenses: LicensesData | (() => Promise<LicensesD
   const [tourStep, setTourStep] = useState<number | null>(null);
   const [pendingTrim, setPendingTrim] = useState<Record<string, [number, number]>>({});
   const web = host.kind === "web";
+  // Web first run (DESIGN.md 4.7): one dismissible banner when the browser cannot make videos smaller.
+  const [videoBannerDismissed, setVideoBannerDismissed] = useState(() => { try { return localStorage.getItem(VIDEO_BANNER_KEY) === "1"; } catch { return false; } });
+  const showVideoBanner = web && !!caps && !caps.video && !videoBannerDismissed;
+  const dismissVideoBanner = () => { setVideoBannerDismissed(true); try { localStorage.setItem(VIDEO_BANNER_KEY, "1"); } catch { /* storage unavailable */ } };
   const steps = useMemo(() => tourSteps(web), [web]);
 
   // First run: welcome card, then the tour (DESIGN.md 4.7).
@@ -183,6 +190,14 @@ function Shell({ licenses }: { licenses: LicensesData | (() => Promise<LicensesD
   return (
     <div className="flex h-full min-h-screen flex-col bg-surface-base text-on-surface">
       <Header />
+      {showVideoBanner && (
+        <div className="mx-auto w-full max-w-[980px] px-5 pb-2" data-testid="video-banner" role="status">
+          <div className="flex items-center justify-between gap-3 rounded-card border border-subtle bg-surface-sunken px-3 py-2 text-xs text-on-surface-muted">
+            <span>This browser can't make videos smaller. Chrome, Edge or Safari can, or use the desktop app.</span>
+            <button className="smg-btn smg-btn--ghost smg-btn--sm !px-1.5" aria-label="Dismiss" onClick={dismissVideoBanner} data-testid="video-banner-dismiss"><X size={14} /></button>
+          </div>
+        </div>
+      )}
       <main className="mx-auto flex w-full max-w-[980px] flex-1 flex-col gap-6 px-5 pb-8 pt-2">
         <section className="flex flex-col gap-3" data-testid="step-one">
           <div className="flex items-center gap-2"><span className={clsx("smg-step", !hasFiles && "smg-step--active")}>1</span><h2 className="text-type-3 font-sans text-on-surface-muted">Add your files</h2></div>

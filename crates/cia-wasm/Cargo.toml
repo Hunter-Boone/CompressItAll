@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 cia-core = { path = "../cia-core" }
 cia-engine = { path = "../cia-engine", default-features = false }
 cia-archive = { path = "../cia-archive" }
+cia-video-plan = { path = "../cia-video-plan" }
 cia-wasm-libc = { path = "../cia-wasm-libc", features = ["mozjpeg", "libwebp", "libdeflate"] }
 wasm-bindgen = "=0.2.100"
 js-sys = "0.3"
