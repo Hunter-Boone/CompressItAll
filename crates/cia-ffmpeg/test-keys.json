@@ -1,0 +1,16 @@
+{
+  "_comment": [
+    "Ed25519 seed for the PLACEHOLDER Smidge-Libraries manifest key. NOTHING in this file is secret.",
+    "The 'libraries-dev' entry lets tests sign fake manifests that crates/cia-ffmpeg/src/pinned.rs accepts.",
+    "Before the first real ffmpeg release: generate the real pair, store the seed only as the Smidge-Libraries",
+    "LIBRARIES_MANIFEST_KEY secret, paste the public key into pinned.rs, and DELETE this entry."
+  ],
+  "keys": [
+    {
+      "kid": "libraries-dev",
+      "placeholder": true,
+      "seed_b64": "ZpD4VPwmdUkIoLT/YPuR43pPToG6sf/dmYUNWXckhb8=",
+      "public_key_hex": "d9c505ed7ef1bb334fdc34266ad7444f8467ca57e2c1b449d8ae4493cb3d1922"
+    }
+  ]
+}

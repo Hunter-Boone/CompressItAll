@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: render(&sw)
+---
+-hide_banner -nostdin -y -progress pipe:1 -nostats -v error -i clip.mp4 -filter_complex "[0:v:0]scale=1280:720:flags=lanczos,setsar=1[v];[0:a:0]aresample=async=1:first_pts=0[a]" -map [v] -map [a] -c:v h264_mf -rate_control pc_vbr -b:v 2000000 -scenario display_remoting -hw_encoding 0 -fps_mode cfr -r 30 -pix_fmt yuv420p -c:a aac -b:a 128000 -ac 2 -map_metadata -1 -map_chapters -1 -movflags +faststart clip.partial.mp4

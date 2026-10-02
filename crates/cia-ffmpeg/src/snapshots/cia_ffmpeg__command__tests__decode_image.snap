@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: "render(&decode_image_args(Path::new(\"photo.heic\")))"
+---
+-hide_banner -nostdin -v error -nostats -i photo.heic -frames:v 1 -pix_fmt rgba -f image2pipe -c:v png -

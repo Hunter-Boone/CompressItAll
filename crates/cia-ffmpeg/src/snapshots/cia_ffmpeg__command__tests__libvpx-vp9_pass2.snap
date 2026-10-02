@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: render(&second)
+---
+-hide_banner -nostdin -y -progress pipe:1 -nostats -v error -i clip.mp4 -filter_complex "[0:v:0]scale=1280:720:flags=lanczos,setsar=1[v];[0:a:0]aresample=async=1:first_pts=0[a]" -map [v] -map [a] -c:v libvpx-vp9 -b:v 2000000 -minrate 1000000 -maxrate 2900000 -row-mt 1 -tile-columns 2 -deadline good -cpu-used 2 -pass 2 -passlogfile passlog -fps_mode cfr -r 30 -pix_fmt yuv420p -c:a libopus -b:a 128000 -ac 2 -map_metadata -1 -map_chapters -1 clip.partial.webm

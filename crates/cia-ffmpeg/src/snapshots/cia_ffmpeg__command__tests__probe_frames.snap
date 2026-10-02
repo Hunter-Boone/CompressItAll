@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: "render(&probe_frames_args(Path::new(\"in.mp4\")))"
+---
+-v error -print_format json -show_frames -read_intervals %+5 -select_streams v:0 in.mp4
