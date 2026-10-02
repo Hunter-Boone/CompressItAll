@@ -1,0 +1,30 @@
+name: Nightly matrix
+
+on:
+  schedule:
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.98.1
+      - uses: swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg python3-pil
+      - run: cargo build -p cia-cli --release --locked
+      - run: python3 tools/fixtures/generate.py
+      - name: Full matrix
+        run: CIA_FFMPEG=/usr/bin/ffmpeg target/release/cia matrix --fixtures fixtures/synth --presets all --out target/matrix
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: matrix
+          path: target/matrix/matrix.*
+      - name: Summary
+        if: always()
+        run: cat target/matrix/matrix.md >> "$GITHUB_STEP_SUMMARY"

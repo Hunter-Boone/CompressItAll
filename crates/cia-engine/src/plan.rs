@@ -258,6 +258,7 @@ impl Engine {
         let mut worst: Option<QualityLabel> = None;
         let mut uncertain = false;
         let mut refusal: Option<Refusal> = total_refusal;
+        let mut item_refusals: Vec<Refusal> = Vec::new();
         let audio_caps = planners::audio::host_caps(&self.caps);
         for (item, budget) in req.items.iter().zip(budgets.iter()) {
             let hard = limit.as_ref().map(|l| l.hard_for(item.kind));
@@ -273,8 +274,20 @@ impl Engine {
             if item.kind == Kind::Video {
                 uncertain = true;
             }
-            if refusal.is_none() {
-                refusal = item_refusal;
+            // Per-message limits refuse the whole message; per-file limits only refuse that file,
+            // which becomes a note on its row and a "some fit" result after the run.
+            if let Some(r) = item_refusal {
+                if limit
+                    .as_ref()
+                    .is_none_or(|l| l.scope == LimitScope::PerMessage)
+                    || matches!(r.code, RefusalCode::NeedsFfmpeg)
+                {
+                    if refusal.is_none() {
+                        refusal = Some(r);
+                    }
+                } else {
+                    item_refusals.push(r);
+                }
             }
             items.push(ItemPlan {
                 item_id: item.id.clone(),
@@ -319,6 +332,19 @@ impl Engine {
                 PackagingPlan::Archive { overhead_bytes, .. } => *overhead_bytes,
                 _ => 0,
             };
+        // Every file refused on a per-file limit is a refusal of the whole job too.
+        if refusal.is_none() && !req.items.is_empty() && item_refusals.len() == req.items.len() {
+            refusal = item_refusals.first().cloned();
+        }
+        for r in &item_refusals {
+            if let Some(p) = items.iter_mut().find(|p| {
+                p.prediction.notes.is_empty()
+                    && p.prediction.quality.is_none()
+                    && p.prediction.summary.is_empty()
+            }) {
+                p.prediction.notes.push(r.message.clone());
+            }
+        }
         let verdict = match refusal {
             Some(r) => PlanVerdict::CannotFit { refusal: r },
             None if uncertain => PlanVerdict::Uncertain {

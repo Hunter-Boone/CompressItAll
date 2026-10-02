@@ -1,0 +1,50 @@
+name: Web app
+
+# PR: build + Playwright. main: Cloudflare Pages preview. Tag web-v*: production (DESIGN.md 6.5).
+on:
+  pull_request:
+    paths: ["apps/web/**", "packages/**", "crates/**", "tools/**", ".github/workflows/web.yml"]
+  push:
+    branches: [main]
+    tags: ["web-v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.98.1
+          targets: wasm32-unknown-unknown
+      - uses: swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: wasm toolchain
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends clang binaryen
+          curl -sSfL https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-25/wasi-sdk-25.0-x86_64-linux.tar.gz | sudo tar xz -C /opt
+          sudo mv /opt/wasi-sdk-25.0-x86_64-linux /opt/wasi-sdk
+          cargo install wasm-bindgen-cli --version 0.2.100 --locked
+      - run: npm ci
+      - run: cargo xtask wasm
+      - run: npm run build -w apps/web
+      - name: Playwright
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e:web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+      - name: Deploy to Cloudflare Pages
+        if: github.event_name == 'push' && env.CLOUDFLARE_API_TOKEN != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          BRANCH=$([[ "$GITHUB_REF" == refs/tags/web-v* ]] && echo production || echo main)
+          npx wrangler pages deploy apps/web/dist --project-name smidge-app --branch "$BRANCH"

@@ -534,6 +534,7 @@ dependencies = [
  "cia-office",
  "cia-pdf",
  "cia-video-plan",
+ "image",
  "infer",
  "log",
  "rayon",

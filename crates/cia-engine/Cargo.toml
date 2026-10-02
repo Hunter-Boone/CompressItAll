@@ -36,3 +36,5 @@ ffmpeg = ["dep:cia-ffmpeg", "fs"]
 
 [dev-dependencies]
 tempfile = "3"
+image = { workspace = true }
+cia-archive = { path = "../cia-archive" }

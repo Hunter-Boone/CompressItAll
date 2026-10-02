@@ -165,6 +165,7 @@ impl Engine {
                         for_archive: None,
                     };
                 }
+                progress(0.0, "Working");
                 let outcome = self.run_item(item, budget, &ctx, &allowed, cancel);
                 let (outcome, attempts) = match outcome {
                     Err(e) => {

@@ -1,0 +1,59 @@
+name: Promote release
+
+# Publishes a draft release in the Downloads repo and writes channels/<channel>.json (DESIGN.md 6.2, 6.3).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote, e.g. 1.2.0"
+        required: true
+      channel:
+        description: "stable or beta"
+        required: true
+        default: beta
+      rollout_percent:
+        description: "0-100; set 0 to pull a release"
+        required: true
+        default: "100"
+      notes:
+        description: "One or two plain sentences for the updater"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  DOWNLOADS_REPO: Hunter-Boone/CompressItAll-Downloads-staging
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the draft
+        env:
+          GH_TOKEN: ${{ secrets.DOWNLOADS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          V="${{ github.event.inputs.version }}"
+          PRE=$([ "${{ github.event.inputs.channel }}" = "beta" ] && echo "--prerelease" || echo "")
+          gh release edit "v$V" --repo "$DOWNLOADS_REPO" --draft=false $PRE
+      - name: Write channel manifest
+        env:
+          GH_TOKEN: ${{ secrets.DOWNLOADS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          V="${{ github.event.inputs.version }}"; CH="${{ github.event.inputs.channel }}"; PCT="${{ github.event.inputs.rollout_percent }}"
+          gh release download "v$V" --repo "$DOWNLOADS_REPO" --pattern release.json --dir . --clobber
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${DOWNLOADS_REPO}.git" dl
+          mkdir -p dl/channels
+          node -e '
+            const fs=require("fs"); const [v,ch,pct,notes,repo]=process.argv.slice(1);
+            const r=JSON.parse(fs.readFileSync("release.json","utf8"));
+            const base=`https://github.com/${repo}/releases/download/v${v}/`;
+            const platforms={}; for (const [k,p] of Object.entries(r.platforms)) platforms[k]={ url: base+encodeURIComponent(p.file), signature: p.signature };
+            const prev=fs.existsSync(`dl/channels/${ch}.json`)?JSON.parse(fs.readFileSync(`dl/channels/${ch}.json`,"utf8")):{};
+            const manifest={ version:v, pub_date:new Date().toISOString(), notes: notes || prev.notes || "", rollout_percent: Number(pct), blocked_versions: prev.blocked_versions || [], platforms };
+            fs.writeFileSync(`dl/channels/${ch}.json`, JSON.stringify(manifest,null,2));
+            if (Number(pct) === 100) fs.writeFileSync(`dl/channels/${ch}.tauri.json`, JSON.stringify({ version:v, notes:manifest.notes, pub_date:manifest.pub_date, platforms }, null, 2));
+          ' "$V" "$CH" "$PCT" "${{ github.event.inputs.notes }}" "$DOWNLOADS_REPO"
+          cd dl && git config user.name "github-actions[bot]" && git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add channels && git commit -m "channels/$CH: $V at $PCT%" && git push

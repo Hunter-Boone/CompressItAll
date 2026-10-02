@@ -1,0 +1,68 @@
+name: Site
+
+# Previews on PRs; production only through the protected `production` environment (DESIGN.md 6.5).
+on:
+  pull_request:
+    paths: ["apps/site/**", "packages/api-types/**", "packages/brand/**", "packages/tokens/**", ".github/workflows/site.yml"]
+  push:
+    branches: [main]
+    paths: ["apps/site/**", "packages/api-types/**", "packages/brand/**", "packages/tokens/**"]
+  workflow_dispatch:
+    inputs:
+      production:
+        description: "Deploy to production"
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -w apps/site
+      - run: npm run build -w apps/site
+        env:
+          SMG_DB: memory
+
+  preview:
+    needs: test
+    if: github.event_name != 'workflow_dispatch' && vars.VERCEL_PROJECT_ID != ''
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i -g vercel
+      - run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/site
+      - run: vercel deploy --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/site
+        env:
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+
+  production:
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.production
+    runs-on: ubuntu-22.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i -g vercel
+      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/site
+      - run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: apps/site
+        env:
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}

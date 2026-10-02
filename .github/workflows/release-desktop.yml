@@ -1,0 +1,156 @@
+name: Release desktop
+
+# Tag v*.*.* (or v*.*.*-beta.N) -> tests -> signed builds on 3 OS -> DRAFT release in the Downloads repo.
+# Nothing is public until promote.yml runs (DESIGN.md 6.2).
+on:
+  push:
+    tags: ["v*.*.*", "v*.*.*-beta.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build (must match apps/desktop/src-tauri/tauri.conf.json)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  DOWNLOADS_REPO: Hunter-Boone/CompressItAll-Downloads-staging
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: Windows_x64
+          - os: macos-latest
+            target: universal-apple-darwin
+            label: macOS_universal
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            label: Linux_x86_64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      CIA_API_BASE: https://www.smidge.example/api/v1
+      CIA_BUILD_CHANNEL: ${{ contains(github.ref, 'beta') && 'beta' || 'stable' }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.98.1
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+      - name: NASM (Windows)
+        if: runner.os == 'Windows'
+        run: choco install nasm --no-progress -y
+      - run: npm ci
+      - name: Apple certificate
+        if: runner.os == 'macOS'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE" ]; then echo "No Apple certificate secret: building unsigned"; exit 0; fi
+          echo "$APPLE_CERTIFICATE" | base64 --decode > certificate.p12
+          security create-keychain -p "${{ github.run_id }}" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "${{ github.run_id }}" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${{ github.run_id }}" build.keychain
+          rm certificate.p12
+      - name: Windows signing tool
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if ("${{ secrets.AZURE_CLIENT_ID }}" -eq "") { echo "No Azure Trusted Signing secrets: building unsigned"; exit 0 }
+          cargo install trusted-signing-cli --locked
+      - name: Build
+        shell: bash
+        env:
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_ENDPOINT: ${{ secrets.AZURE_ENDPOINT }}
+          AZURE_CODE_SIGNING_NAME: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          AZURE_CERT_PROFILE_NAME: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+        run: |
+          cd apps/desktop
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            npx tauri build --target universal-apple-darwin
+          else
+            npx tauri build
+          fi
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir -p out
+          V="${GITHUB_REF_NAME#v}"; [ -n "${{ github.event.inputs.version }}" ] && V="${{ github.event.inputs.version }}"
+          B=apps/desktop/src-tauri/target
+          copy() { for f in "$@"; do [ -f "$f" ] || continue; ext="${f##*.}"; case "$f" in *.tar.gz) ext=tar.gz;; *.tar.gz.sig) ext=tar.gz.sig;; *.sig) ext="$(basename "$f" | sed 's/.*\.\([a-zA-Z]*\)\.sig$/\1.sig/')";; esac; cp "$f" "out/Smidge_${V}_${{ matrix.label }}.${ext}"; done; }
+          case "${{ runner.os }}" in
+            Windows) copy $B/release/bundle/nsis/*.exe $B/release/bundle/nsis/*.sig $B/release/bundle/msi/*.msi $B/release/bundle/msi/*.sig ;;
+            macOS)   copy $B/universal-apple-darwin/release/bundle/dmg/*.dmg $B/universal-apple-darwin/release/bundle/macos/*.tar.gz $B/universal-apple-darwin/release/bundle/macos/*.sig ;;
+            Linux)   copy $B/release/bundle/appimage/*.AppImage $B/release/bundle/appimage/*.sig $B/release/bundle/deb/*.deb ;;
+          esac
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.label }}
+          path: out/*
+          if-no-files-found: error
+
+  draft:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+      - name: Flatten, checksums, release.json
+        run: |
+          mkdir -p release
+          find assets -type f -exec cp {} release/ \;
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          V="${GITHUB_REF_NAME#v}"; [ -n "${{ github.event.inputs.version }}" ] && V="${{ github.event.inputs.version }}"
+          node -e '
+            const fs=require("fs"); const v=process.argv[1]; const files=fs.readdirSync(".");
+            const plat={ "windows-x86_64":/Windows_x64.*-setup\.exe$|Windows_x64\.exe$/, "darwin-aarch64":/macOS_universal\.tar\.gz$/, "darwin-x86_64":/macOS_universal\.tar\.gz$/, "linux-x86_64":/Linux_x86_64\.AppImage$/ };
+            const platforms={};
+            for (const [k,re] of Object.entries(plat)) { const f=files.find(n=>re.test(n)); const s=f && files.find(n=>n===f+".sig"); if (f&&s) platforms[k]={ file:f, signature: fs.readFileSync(s,"utf8").trim() }; }
+            fs.writeFileSync("release.json", JSON.stringify({ version:v, built:new Date().toISOString(), platforms }, null, 2));
+          ' "$V"
+          cp ../NOTICE.md . 2>/dev/null || true
+          ls -la
+      - name: Create DRAFT release in the Downloads repo
+        env:
+          GH_TOKEN: ${{ secrets.DOWNLOADS_REPO_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          V="${GITHUB_REF_NAME#v}"; [ -n "${{ github.event.inputs.version }}" ] && V="${{ github.event.inputs.version }}"
+          gh release create "v$V" --repo "$DOWNLOADS_REPO" --draft --title "Smidge $V" --notes "Draft. Promote with promote.yml after the lab smoke test." release/* || gh release upload "v$V" --repo "$DOWNLOADS_REPO" --clobber release/*
