@@ -703,6 +703,7 @@ impl VideoBackend for WasmVideoBackend {
         _budget: Option<Budget>,
         _target: Target,
         _options: &PlanOptions,
+        _allowed: &[cia_core::presets::VideoFormat],
         _faster: bool,
         _dest: &OutputDest,
         _progress: &dyn Fn(f32, Option<u64>),

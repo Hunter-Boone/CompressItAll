@@ -10,7 +10,7 @@ use cia_ffmpeg::install::{
     install_with, locate_with_override, platform_key, remove, sha256_hex, use_own_copy,
     verify_manifest, FileFetcher, InstallError, InstallProgress,
 };
-use cia_ffmpeg::pinned::{Pin, PUBLIC_KEY, VERSION};
+use cia_ffmpeg::pinned::{Pin, DEV_PUBLIC_KEY as PUBLIC_KEY, VERSION};
 use cia_ffmpeg::Cancel;
 use ed25519_dalek::{Signer, SigningKey};
 use std::io::Write;
