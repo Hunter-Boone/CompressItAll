@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: render(&first)
+---
+-hide_banner -nostdin -y -progress pipe:1 -nostats -v error -i clip.mp4 -filter_complex [0:v:0]scale=1280:720:flags=lanczos,setsar=1[v] -map [v] -c:v libx264 -preset medium -profile:v high -b:v 2000000 -maxrate 3000000 -bufsize 4000000 -pass 1 -passlogfile passlog -fps_mode cfr -r 30 -pix_fmt yuv420p -an -map_metadata -1 -map_chapters -1 -f null -

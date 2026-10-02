@@ -1,0 +1,39 @@
+[package]
+name = "cia-ffmpeg"
+description = "Smidge native FFmpeg integration: install and verify the LGPL build, ffprobe, encoder detection, exact encode command builders, a runner with progress, watchdog and process-tree cancel, retrying video compression and output verification. Native only; FFmpeg always runs as a separate process."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["download"]
+# HTTP client for `install`. Off: everything else builds and tests without reqwest.
+download = ["dep:reqwest"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+cia-video-plan = { path = "../cia-video-plan" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+log.workspace = true
+sha2.workspace = true
+base64.workspace = true
+image.workspace = true
+ed25519-dalek = { version = "2", default-features = false, features = ["std"] }
+zip = { version = "8.6", default-features = false, features = ["deflate-flate2-zlib-rs"] }
+tempfile = "3"
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"], optional = true }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading"] }
+
+[dev-dependencies]
+insta = { version = "1", features = ["json"] }

@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: "render(&decode_check_args(Path::new(\"out.mp4\"), Edge::Last))"
+---
+-hide_banner -nostdin -v error -nostats -sseof -1 -i out.mp4 -f null -

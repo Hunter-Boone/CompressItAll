@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: "render(&remux_args(Path::new(\"in.mkv\"), Path::new(\"out.partial.mp4\"),\nContainer::Mp4, Some(0)))"
+---
+-hide_banner -nostdin -y -progress pipe:1 -nostats -v error -i in.mkv -map 0:v:0 -map 0:a:0 -c copy -map_metadata -1 -map_chapters -1 -movflags +faststart out.partial.mp4

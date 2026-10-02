@@ -1,0 +1,5 @@
+---
+source: crates/cia-ffmpeg/src/command.rs
+expression: "render(&extract_frame_args(Path::new(\"in.mp4\"), 12_345))"
+---
+-hide_banner -nostdin -v error -nostats -ss 12.345 -i in.mp4 -frames:v 1 -vf scale='min(1280,iw)':-2 -f image2pipe -c:v mjpeg -q:v 3 -
