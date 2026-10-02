@@ -1,0 +1,36 @@
+[package]
+name = "cia-image"
+description = "Smidge image planner: decode, classify, candidate encoders, quality search, downscale, verification (DESIGN.md 3.4)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+cia-mozjpeg = { path = "../cia-mozjpeg" }
+cia-webp = { path = "../cia-webp" }
+image = { workspace = true }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+log.workspace = true
+oxipng = { version = "9", default-features = false, features = ["zopfli", "freestanding"] }
+zopfli = { version = "0.8", default-features = false, features = ["gzip", "zlib"] }
+ravif = { version = "0.13", default-features = false }
+quantette = { version = "0.6", default-features = false, features = ["image", "kmeans", "std"] }
+fast_image_resize = { version = "6", features = ["image"] }
+ssimulacra2 = "0.5"
+kamadak-exif = "0.6"
+little_exif = { version = "0.6", default-features = false }
+data-encoding = "2"
+zune-png = "0.4"
+flate2 = { version = "1", default-features = false, features = ["zlib-rs"] }
+gif = "0.14"
+jxl-oxide = { version = "0.12", default-features = false, features = ["image"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = { workspace = true }
+
+[dev-dependencies]
+little_exif = { version = "0.6", default-features = false }
