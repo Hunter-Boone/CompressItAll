@@ -1,0 +1,29 @@
+[package]
+name = "cia-audio"
+description = "Smidge audio engine: Symphonia decode, FLAC/WAV encode, native Opus encode with Ogg mux, resampling, the audio planner and verification."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["opus-native"]
+# libopus via the `opus` crate (cmake build). Off for wasm32: the web host
+# encodes and decodes Opus with WebCodecs instead.
+opus-native = ["dep:opus"]
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+thiserror.workspace = true
+log.workspace = true
+symphonia = { version = "0.5", default-features = false, features = ["mp3", "flac", "vorbis", "ogg", "wav", "pcm", "aiff", "caf", "mkv"] }
+flacenc = { version = "0.5", default-features = false }
+hound = "3.5"
+ogg = "0.9"
+rubato = "0.16"
+opus = { version = "0.3", optional = true }
+
+[dev-dependencies]
