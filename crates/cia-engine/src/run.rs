@@ -5,7 +5,7 @@
 use crate::inspect::err_code;
 use crate::log::JobLog;
 use crate::output::OutputDest;
-use crate::plan::{allowed_for, budgets, ctx_clone, will_zip, PlanRequest};
+use crate::plan::{allowed_for, budgets, ctx_clone, PlanRequest};
 use crate::planners::{self, Ctx, Encoded, PlannerOutcome};
 use crate::{CancelToken, Engine, EngineError};
 use cia_core::events::{EngineEvent, EventSink};
@@ -259,12 +259,18 @@ impl Engine {
         let bytes = self.reader.read(&item.source)?;
         let audio_caps = planners::audio::host_caps(&self.caps);
         Ok(match item.kind {
-            Kind::Image => planners::image::run(item, &bytes, budget, ctx),
+            Kind::Image => {
+                let key = crate::plan::cache_key(item, budget, ctx);
+                match self.preview_cache.lock().unwrap().remove(&key) {
+                    Some(e) => PlannerOutcome::Encoded(e),
+                    None => planners::image::run(item, &bytes, budget, ctx),
+                }
+            }
             Kind::AnimatedImage => planners::image::run_animated(item, &bytes, budget, ctx),
             Kind::Pdf => planners::pdf::run(item, &bytes, budget, ctx),
             Kind::Audio => planners::audio::run(item, &bytes, budget, &audio_caps, ctx),
             Kind::Archive => self.run_archive(item, &bytes, budget, ctx, allowed),
-            Kind::OfficeDoc => planners::plain::run_other(item, &bytes, budget, ctx),
+            Kind::OfficeDoc => planners::office::run(item, &bytes, budget, ctx, self.can_video()),
             Kind::Text => planners::plain::run_text(item, &bytes, budget, ctx),
             Kind::Video => unreachable!(),
             Kind::Other => planners::plain::run_other(item, &bytes, budget, ctx),
@@ -354,8 +360,9 @@ impl Engine {
                 // The backend already wrote the file; hand back the bytes through the sink so the common path verifies and names it.
                 let bytes = self.sink.read(&r.location)?;
                 self.sink.remove(&r.location);
-                let ext = match r.plan.container { cia_video_plan::Container::Mp4 => "mp4", cia_video_plan::Container::Webm => "webm" };
-                Ok(PlannerOutcome::Encoded(Encoded { bytes, format: ext.into(), extension: ext.into(), summary: crate::plan::video_summary(&r.plan), quality: Some(r.plan.quality), attempts: r.attempts, verification: r.verification }))
+                let plan = r.plan.ok_or_else(|| EngineError::Other("no plan".into()))?;
+                let ext = match plan.container { cia_video_plan::Container::Mp4 => "mp4", cia_video_plan::Container::Webm => "webm" };
+                Ok(PlannerOutcome::Encoded(Encoded { bytes, format: ext.into(), extension: ext.into(), summary: crate::plan::video_summary(&plan), quality: Some(plan.quality), attempts: r.attempts, verification: r.verification }))
             }
             Err(EngineError::Cancelled) => Ok(PlannerOutcome::Failed { code: "cancelled", message: None, closest_bytes: None }),
             Err(EngineError::Damaged(_)) => Ok(PlannerOutcome::Failed { code: "damaged_video", message: None, closest_bytes: None }),

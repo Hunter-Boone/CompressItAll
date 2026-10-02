@@ -28,11 +28,13 @@ pub fn encode(input: &EncodeInput, candidate: Candidate, quality: u8) -> Result<
             }
         }
         Candidate::WebpLossless => {
+            // Effort 100 (method 6) costs about 4 s per megapixel; above 2 MP effort 60 keeps it usable.
+            let effort = if img.pixels() > 2_000_000 { 60 } else { 100 };
             if img.has_alpha {
-                cia_webp::encode_lossless(&img.rgba, img.width, img.height, true, 100).map_err(|e| ImageError::Encoder(e.to_string()))
+                cia_webp::encode_lossless(&img.rgba, img.width, img.height, true, effort).map_err(|e| ImageError::Encoder(e.to_string()))
             } else {
                 let rgb = img.rgb();
-                cia_webp::encode_lossless(&rgb, img.width, img.height, false, 100).map_err(|e| ImageError::Encoder(e.to_string()))
+                cia_webp::encode_lossless(&rgb, img.width, img.height, false, effort).map_err(|e| ImageError::Encoder(e.to_string()))
             }
         }
         Candidate::Avif => {
@@ -54,15 +56,17 @@ pub fn encode(input: &EncodeInput, candidate: Candidate, quality: u8) -> Result<
 /// Raw PNG (fast, unoptimised) then oxipng preset 4, strip safe, zopfli under 2 MP.
 pub fn png_lossless(img: &DecodedImage) -> Result<Vec<u8>, ImageError> {
     let raw = raw_png(img.width, img.height, &img.rgba, img.has_alpha)?;
-    oxipng_optimise(&raw, img.pixels() < 2_000_000)
+    oxipng_optimise(&raw, img.pixels() < 500_000)
 }
 
 pub fn oxipng_optimise(png: &[u8], zopfli: bool) -> Result<Vec<u8>, ImageError> {
-    let mut opts = oxipng::Options::from_preset(4);
+    // Preset 4 under 4 MP (the design's setting); preset 2 above, where 4 costs tens of seconds for a few percent.
+    let big = png.len() > 12_000_000;
+    let mut opts = oxipng::Options::from_preset(if big { 2 } else { 4 });
     opts.strip = oxipng::StripChunks::Safe;
     opts.optimize_alpha = true;
     if zopfli {
-        opts.deflate = oxipng::Deflaters::Zopfli { iterations: std::num::NonZeroU8::new(15).unwrap() };
+        opts.deflate = oxipng::Deflaters::Zopfli { iterations: std::num::NonZeroU8::new(5).unwrap() };
     }
     oxipng::optimize_from_memory(png, &opts).map_err(|e| ImageError::Encoder(e.to_string()))
 }
@@ -91,7 +95,9 @@ pub fn quantise_rgb(rgb: &[u8], width: u32, height: u32, colours: u16) -> Result
     let pixels: &[Srgb<u8>] = from_component_slice(rgb);
     let image = ImageRef::new(width, height, pixels).map_err(|e| ImageError::Encoder(e.to_string()))?;
     let size = PaletteSize::try_from(colours.clamp(2, 256)).map_err(|e| ImageError::Encoder(e.to_string()))?;
-    let indexed = Pipeline::new().palette_size(size).quantize_method(QuantizeMethod::kmeans()).ditherer(FloydSteinberg::new()).input_image(image).output_srgb8_indexed_image();
+    // k-means is the better quantiser but costs seconds on large images; Wu is close and fast.
+    let method = if (width as u64 * height as u64) > 1_000_000 { QuantizeMethod::Wu } else { QuantizeMethod::kmeans() };
+    let indexed = Pipeline::new().palette_size(size).quantize_method(method).ditherer(FloydSteinberg::new()).input_image(image).output_srgb8_indexed_image();
     let (pal, idx) = indexed.into_parts();
     Ok((pal.iter().map(|c| [c.red, c.green, c.blue]).collect(), idx))
 }
@@ -143,7 +149,7 @@ pub fn png_palette(img: &DecodedImage, colours: u16) -> Result<Vec<u8>, ImageErr
         (pal.iter().map(|c| [c[0], c[1], c[2], 255]).collect(), idx)
     };
     let raw = indexed_png(img.width, img.height, &palette, &indices)?;
-    oxipng_optimise(&raw, img.pixels() < 2_000_000)
+    oxipng_optimise(&raw, img.pixels() < 500_000)
 }
 
 /// Write an 8-bit indexed PNG with PLTE (+tRNS when any alpha < 255).

@@ -183,8 +183,18 @@ impl Engine {
                 }
                 let bytes = match self.reader.read(&item.source) { Ok(b) => b, Err(_) => return (Prediction { predicted_bytes: item.bytes, exact: false, summary: "Unreadable".into(), quality: None, notes: vec![] }, Strategy::None, None) };
                 // Real pass: the prediction for images is the real result size (3.4: "images run their real pass-0 encodes").
-                match planners::image::run(item, &bytes, budget, ctx) {
-                    planners::PlannerOutcome::Encoded(e) => (Prediction { predicted_bytes: e.bytes.len() as u64, exact: true, summary: e.summary, quality: e.quality, notes: vec![] }, Strategy::Image { candidates: ctx.allowed_image.clone(), max_long_edge: ctx.options.max_long_edge }, None),
+                // The result is cached so `run` does not encode it a second time.
+                let key = cache_key(item, budget, ctx);
+                let cached = self.preview_cache.lock().unwrap().get(&key).cloned();
+                let outcome = match cached { Some(e) => planners::PlannerOutcome::Encoded(e), None => planners::image::run(item, &bytes, budget, ctx) };
+                match outcome {
+                    planners::PlannerOutcome::Encoded(e) => {
+                        let pred = Prediction { predicted_bytes: e.bytes.len() as u64, exact: true, summary: e.summary.clone(), quality: e.quality, notes: vec![] };
+                        let mut c = self.preview_cache.lock().unwrap();
+                        if c.len() > 64 { c.clear(); }
+                        c.insert(key, e);
+                        (pred, Strategy::Image { candidates: ctx.allowed_image.clone(), max_long_edge: ctx.options.max_long_edge }, None)
+                    }
                     planners::PlannerOutcome::KeptOriginal { .. } => (Prediction { predicted_bytes: item.bytes, exact: true, summary: dims(item, &item.detail.format.to_uppercase()), quality: Some(QualityLabel::Great), notes: vec![] }, Strategy::Copy, None),
                     planners::PlannerOutcome::Refused { code, smallest_bytes, .. } => (Prediction { predicted_bytes: smallest_bytes.unwrap_or(item.bytes), exact: true, summary: String::new(), quality: None, notes: vec![] }, Strategy::None, Some(refuse(code, smallest_bytes, self.preset_suggestions(item, smallest_bytes)))),
                     planners::PlannerOutcome::Failed { code, .. } => (Prediction { predicted_bytes: item.bytes, exact: false, summary: String::new(), quality: None, notes: vec![cia_core::copy::failure_message(code, None, None)] }, Strategy::None, None),
@@ -290,6 +300,12 @@ impl Engine {
 
 fn ctx_goal_preset(_ctx: &Ctx) -> Option<String> {
     None
+}
+
+/// Cache key for an image encode: item, budget, and every option that changes the result.
+pub(crate) fn cache_key(item: &InputItem, budget: Option<u64>, ctx: &Ctx) -> String {
+    let o = ctx.options;
+    format!("{}|{:?}|{:?}|{}|{}|{}|{}|{:?}|{}|{}|{:?}", item.id, budget, ctx.smaller, o.allow_format_change, o.modern_formats, o.flatten_transparency, o.keep_photo_details, o.max_long_edge, o.keep_location, ctx.allowed_image.join(","), ctx.hard_bytes)
 }
 
 pub(crate) fn ctx_clone<'a>(c: &Ctx<'a>) -> Ctx<'a> {

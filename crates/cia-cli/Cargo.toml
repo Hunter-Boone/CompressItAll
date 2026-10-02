@@ -1,0 +1,24 @@
+[package]
+name = "cia-cli"
+description = "Smidge command line: compress, inspect, plan, verify, matrix"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "cia"
+path = "src/main.rs"
+
+[dependencies]
+cia-core = { path = "../cia-core" }
+cia-engine = { path = "../cia-engine", features = ["fs", "opus", "ffmpeg"] }
+cia-video-plan = { path = "../cia-video-plan" }
+clap = { version = "4", features = ["derive"] }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+env_logger = "0.11"
+dirs = "6"
+image = { workspace = true }
+cia-archive = { path = "../cia-archive" }

@@ -11,6 +11,8 @@ pub mod output;
 pub mod plan;
 pub mod planners;
 pub mod run;
+#[cfg(feature = "ffmpeg")]
+pub mod video_ffmpeg;
 
 use cia_core::*;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -77,7 +79,8 @@ pub struct VideoTranscodeResult {
     pub location: OutputLocation,
     pub file_name: String,
     pub bytes: u64,
-    pub plan: cia_video_plan::VideoPlan,
+    /// None when the original was kept.
+    pub plan: Option<cia_video_plan::VideoPlan>,
     pub attempts: Vec<Attempt>,
     pub verification: VerificationReport,
     /// True when the source was copied/remuxed rather than re-encoded.
@@ -109,11 +112,13 @@ pub struct Engine {
     pub temp_dir: Option<String>,
     /// Max parallel items (rayon on native). 1 on wasm.
     pub parallelism: usize,
+    /// Encoded results from the last preview, reused by `run` so images are not encoded twice.
+    pub preview_cache: std::sync::Mutex<std::collections::HashMap<String, planners::Encoded>>,
 }
 
 impl Engine {
     pub fn new(reader: Arc<dyn InputReader>, sink: Arc<dyn OutputSink>, caps: Capabilities) -> Self {
-        Self { reader, sink, video: None, caps, temp_dir: None, parallelism: default_parallelism() }
+        Self { reader, sink, video: None, caps, temp_dir: None, parallelism: default_parallelism(), preview_cache: Default::default() }
     }
     pub fn with_video(mut self, video: Arc<dyn VideoBackend>) -> Self {
         self.caps.ffmpeg = video.capabilities();

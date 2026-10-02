@@ -1,5 +1,5 @@
 use super::*;
-use cia_image::{ImageOptions, ImageOutcome, Mode};
+use cia_image::{ImageOptions, ImageOutcome};
 
 fn opts(ctx: &Ctx, budget: Option<u64>) -> ImageOptions {
     let allowed: Vec<&str> = ctx.allowed_image.iter().map(String::as_str).collect();
@@ -27,15 +27,17 @@ pub fn sizes(bytes: &[u8], ctx: &Ctx) -> Result<(Sizes, cia_image::DecodedImage)
 }
 
 pub fn run(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) -> PlannerOutcome {
+    let t0 = std::time::Instant::now();
     let img = match cia_image::decode(bytes) {
         Ok(i) => i,
         Err(cia_image::ImageError::Unsupported(what)) => return PlannerOutcome::Refused { code: RefusalCode::UnsupportedInput { what }, smallest_bytes: None, attempts: vec![] },
         Err(_) => return PlannerOutcome::Failed { code: "damaged_input", message: None, closest_bytes: None },
     };
+    log::debug!("decode {} ms", t0.elapsed().as_millis());
     let o = opts(ctx, budget);
     match cia_image::compress(&img, bytes, &o, ctx.cancel, ctx.progress) {
         Ok(ImageOutcome::Encoded(r)) => {
-            let attempts = r.attempts.iter().enumerate().map(|(i, a)| attempt(i as u32 + 1, &item.id, &a.candidate.name(), serde_json::json!({"quality": a.quality, "width": a.width, "height": a.height}), Some(a.bytes), a.score, match budget { Some(b) if a.bytes >= b => AttemptVerdict::Over { by_bytes: a.bytes - b }, _ => AttemptVerdict::Fits })).collect();
+            let attempts = to_attempts(&item.id, &r.attempts, budget);
             let verification = cia_image::verify(&r.bytes, &cia_image::Expect { format: r.format, width: r.width, height: r.height, has_alpha: img.has_alpha && !o.flatten_transparency, gps_allowed: o.keep_location, hard_bytes: ctx.hard_bytes });
             PlannerOutcome::Encoded(Encoded { bytes: r.bytes, format: r.format.token().into(), extension: r.format.extension().into(), summary: format!("{} × {} {}", r.width, r.height, r.format.token().to_uppercase()), quality: Some(r.label), attempts, verification })
         }
@@ -47,7 +49,7 @@ pub fn run(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) -> Pl
 }
 
 fn to_attempts(id: &str, a: &[cia_image::ImageAttempt], budget: Option<u64>) -> Vec<Attempt> {
-    a.iter().enumerate().map(|(i, a)| attempt(i as u32 + 1, id, &a.candidate.name(), serde_json::json!({"quality": a.quality, "width": a.width, "height": a.height}), Some(a.bytes), a.score, match budget { Some(b) if a.bytes >= b => AttemptVerdict::Over { by_bytes: a.bytes - b }, _ => AttemptVerdict::Fits })).collect()
+    a.iter().enumerate().map(|(i, a)| { let mut at = attempt(i as u32 + 1, id, &a.candidate.name(), serde_json::json!({"quality": a.quality, "width": a.width, "height": a.height}), Some(a.bytes), a.score, match budget { Some(b) if a.bytes >= b => AttemptVerdict::Over { by_bytes: a.bytes - b }, _ => AttemptVerdict::Fits }); at.elapsed_ms = a.elapsed_ms; at }).collect()
 }
 
 pub fn run_animated(item: &InputItem, bytes: &[u8], budget: Option<u64>, ctx: &Ctx) -> PlannerOutcome {

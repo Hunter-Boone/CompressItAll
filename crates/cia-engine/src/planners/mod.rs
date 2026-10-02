@@ -6,6 +6,7 @@
 pub mod archive;
 pub mod audio;
 pub mod image;
+pub mod office;
 pub mod pdf;
 pub mod plain;
 

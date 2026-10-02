@@ -11,6 +11,7 @@ cia-core = { path = "../cia-core" }
 cia-image = { path = "../cia-image" }
 cia-archive = { path = "../cia-archive" }
 cia-pdf = { path = "../cia-pdf" }
+cia-office = { path = "../cia-office" }
 cia-audio = { path = "../cia-audio", default-features = false }
 cia-video-plan = { path = "../cia-video-plan" }
 cia-mozjpeg = { path = "../cia-mozjpeg" }
@@ -22,12 +23,16 @@ infer = "0.16"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rayon = { workspace = true }
-cia-audio = { path = "../cia-audio" }
+cia-ffmpeg = { path = "../cia-ffmpeg", optional = true }
 
 [features]
 default = []
 # Filesystem reader/sink and the temp-dir machinery (desktop and CLI).
 fs = ["cia-archive/fs"]
+# Native Opus encoding through libopus.
+opus = ["cia-audio/opus-native"]
+# FFmpeg video backend (desktop and CLI).
+ffmpeg = ["dep:cia-ffmpeg", "fs"]
 
 [dev-dependencies]
 tempfile = "3"

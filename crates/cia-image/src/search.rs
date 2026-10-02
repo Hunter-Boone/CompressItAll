@@ -46,6 +46,18 @@ pub struct ImageAttempt {
     pub height: u32,
     pub bytes: u64,
     pub score: Option<f32>,
+    pub elapsed_ms: u64,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn now_ms() -> u64 {
+    use std::sync::OnceLock;
+    static START: OnceLock<std::time::Instant> = OnceLock::new();
+    START.get_or_init(std::time::Instant::now).elapsed().as_millis() as u64
+}
+#[cfg(target_arch = "wasm32")]
+fn now_ms() -> u64 {
+    0
 }
 
 #[derive(Debug, Clone)]
@@ -92,8 +104,9 @@ impl<'a> Encoder<'a> {
                 return Err(ImageError::Encoder("encode budget exhausted".into()));
             }
             self.encodes += 1;
+            let t0 = now_ms();
             let bytes = encode(&self.input, c, q)?;
-            self.attempts.push(ImageAttempt { candidate: c, quality: c.quality_range().map(|_| q), width: key.2, height: key.3, bytes: bytes.len() as u64, score: None });
+            self.attempts.push(ImageAttempt { candidate: c, quality: c.quality_range().map(|_| q), width: key.2, height: key.3, bytes: bytes.len() as u64, score: None, elapsed_ms: now_ms().saturating_sub(t0) });
             self.cache.insert(key, bytes);
         }
         Ok(self.cache.get(&key).unwrap())
@@ -151,11 +164,39 @@ struct Found {
     bytes: Vec<u8>,
 }
 
+/// Cheap estimate of a lossless/palette candidate's full-size bytes from a quarter-scale encode
+/// (1/16 of the pixels, scaled up with a margin). Used only to skip hopeless candidates.
+fn estimate_lossless(img: &DecodedImage, cls: Class, c: Candidate) -> Option<u64> {
+    if img.pixels() < 1_000_000 {
+        return None;
+    }
+    let (w, h) = (img.width / 4, img.height / 4);
+    if w < 16 || h < 16 {
+        return None;
+    }
+    let small = crate::resize::downscale(img, w, h, false);
+    let input = EncodeInput { img: &small, class: cls };
+    let bytes = encode(&input, c, 0).ok()?.len() as u64;
+    // Quarter scale under-represents detail; lossless sizes scale slightly worse than linearly.
+    Some(bytes * 16 * 9 / 10)
+}
+
 /// Try every candidate at this size against `budget`; returns the winner per 3.4.5.
 fn try_size(enc: &mut Encoder, cands: &[Candidate], budget: u64, progress: ProgressFn, base: f32) -> Result<Option<Found>, ImageError> {
     let mut fits: Vec<Found> = Vec::new();
     let n = cands.len().max(1) as f32;
+    let cls = enc.input.class;
     for (i, &c) in cands.iter().enumerate() {
+        if !c.is_lossy() {
+            let t = now_ms();
+            let est = estimate_lossless(enc.input.img, cls, c);
+            log::debug!("estimate {:?} = {:?} in {} ms", c, est, now_ms() - t);
+            if let Some(est) = est {
+                if est > budget * 3 {
+                    continue; // cannot plausibly fit; skip the expensive full-size encode
+                }
+            }
+        }
         progress(base + (i as f32 / n) * 0.6, &format!("Trying {}", c.format().token().to_uppercase()));
         if c.is_lossy() {
             if let Some((q, _)) = search_quality(enc, c, budget)? {
@@ -241,7 +282,9 @@ fn prepare(img: &DecodedImage, opts: &ImageOptions) -> (DecodedImage, Classifica
 
 /// The image planner entry point.
 pub fn compress(img: &DecodedImage, source_bytes: &[u8], opts: &ImageOptions, cancel: CancelFn, progress: ProgressFn) -> Result<ImageOutcome, ImageError> {
+    let t_start = now_ms();
     let (work, cls, cands) = prepare(img, opts);
+    log::debug!("prepare {} ms: class {:?} candidates {:?}", now_ms() - t_start, cls.class, cands);
     let downscaled_by_option = work.width != img.width || work.height != img.height;
     let mut enc = Encoder { input: EncodeInput { img: &work, class: cls.class }, cache: HashMap::new(), attempts: vec![], encodes: 0, max_encodes: opts.max_encodes, cancel };
     let finish = |enc: &Encoder, found: Found, w: u32, h: u32, downscaled: bool| -> ImageResult {
@@ -271,7 +314,10 @@ pub fn compress(img: &DecodedImage, source_bytes: &[u8], opts: &ImageOptions, ca
             if cands.is_empty() {
                 return Ok(ImageOutcome::Refused { smallest_bytes: img.source_bytes, attempts: vec![] });
             }
-            if let Some(found) = try_size(&mut enc, &cands, budget, progress, 0.0)? {
+            let t = now_ms();
+            let first = try_size(&mut enc, &cands, budget, progress, 0.0)?;
+            log::debug!("full-size pass {} ms", now_ms() - t);
+            if let Some(found) = first {
                 return Ok(ImageOutcome::Encoded(finish(&enc, found, work.width, work.height, downscaled_by_option)));
             }
             // Downscale, at most 3 rounds (3.4.6).
