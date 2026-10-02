@@ -20,7 +20,8 @@ import { ActivateModal, AllowanceModal, FfmpegSetupModal, HelpModal, Toast, Upgr
 
 export interface AppProps {
   host: EngineHost;
-  licenses?: LicensesData;
+  /** Third-party licence data, or a loader for it (the JSON is about 1 MB, so hosts load it lazily). */
+  licenses?: LicensesData | (() => Promise<LicensesData>);
 }
 
 export function App({ host, licenses }: AppProps) {
@@ -41,7 +42,8 @@ function goalFor(dest: Destination): Goal {
   }
 }
 
-function Shell({ licenses }: { licenses: LicensesData }) {
+function Shell({ licenses }: { licenses: LicensesData | (() => Promise<LicensesData>) }) {
+  const [licenseData, setLicenseData] = useState<LicensesData>(typeof licenses === "function" ? { generated_at: "", groups: [] } : licenses);
   const { host, caps, settings, updateSettings, license, allowance, refreshAllowance, ready } = useHost();
   const { state, dispatch } = useStore();
   const [tourStep, setTourStep] = useState<number | null>(null);
@@ -55,6 +57,12 @@ function Shell({ licenses }: { licenses: LicensesData }) {
     if (!settings.welcomeSeen) dispatch({ type: "modal", modal: "welcome" });
     else if (settings.tourVersionSeen < TOUR_VERSION) setTourStep(0);
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (state.modal === "licenses" && typeof licenses === "function" && licenseData.groups.length === 0) {
+      licenses().then(setLicenseData).catch(() => {});
+    }
+  }, [state.modal, licenses, licenseData.groups.length]);
 
   const finishTour = useCallback(() => { setTourStep(null); updateSettings({ tourVersionSeen: TOUR_VERSION, welcomeSeen: true }); }, [updateSettings]);
   const startTour = () => { dispatch({ type: "modal", modal: null }); setTourStep(0); };
@@ -172,7 +180,7 @@ function Shell({ licenses }: { licenses: LicensesData }) {
 
       {state.drawerOpen && <AdvancedDrawer />}
       {state.modal === "settings" && <SettingsModal onStartTour={startTour} />}
-      {state.modal === "licenses" && <LicensesPage data={licenses} />}
+      {state.modal === "licenses" && <LicensesPage data={licenseData} />}
       {state.modal === "upgrade" && <UpgradeModal />}
       {state.modal === "activate" && <ActivateModal />}
       {state.modal === "ffmpeg" && <FfmpegSetupModal />}

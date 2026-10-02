@@ -17,7 +17,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@cia/api-types": "*",
-    "@cia/brand": "*"
+    "@cia/brand": "*",
+    "@cia/licenses-data": "*"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

@@ -25,7 +25,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator && new URLSearchParams(
 pickHost().then((host) => {
   createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
-      <App host={host} />
+      <App host={host} licenses={() => import("@cia/licenses-data").then((m) => (m.default ?? m) as unknown as import("@cia/ui").LicensesData)} />
     </React.StrictMode>,
   );
 });
