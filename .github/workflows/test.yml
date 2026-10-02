@@ -38,6 +38,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends clang
           cargo install cargo-deny --locked
+          cargo install cargo-about --locked --features cli
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo deny check licenses bans sources
@@ -51,6 +52,7 @@ jobs:
           cargo xtask presets-doc
           cargo xtask types
           git diff --exit-code -- docs/presets-sources.md packages/engine-client/src/generated || { echo "::error::run cargo xtask presets-doc && cargo xtask types and commit"; exit 1; }
+          bash tools/licenses/generate.sh --check || { echo "::error::run cargo xtask licenses and commit"; exit 1; }
 
   rust:
     name: Rust (${{ matrix.os }})
