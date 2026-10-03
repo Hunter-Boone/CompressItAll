@@ -100,6 +100,12 @@ jobs:
           AZURE_CODE_SIGNING_NAME: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
           AZURE_CERT_PROFILE_NAME: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
         run: |
+          # Tauri signs and notarises whenever APPLE_SIGNING_IDENTITY is set, even to ""; with no
+          # Apple secrets we must build unsigned, so drop the empty variables entirely.
+          if [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            echo "No Apple signing identity: building unsigned"
+            unset APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD
+          fi
           cd apps/desktop
           if [ "${{ runner.os }}" = "macOS" ]; then
             npx tauri build --target universal-apple-darwin
@@ -111,7 +117,7 @@ jobs:
         run: |
           mkdir -p out
           V="${GITHUB_REF_NAME#v}"; [ -n "${{ github.event.inputs.version }}" ] && V="${{ github.event.inputs.version }}"
-          B=apps/desktop/src-tauri/target
+          B=target  # Cargo workspace: bundles land in the repo-root target dir, not under src-tauri
           copy() { for f in "$@"; do [ -f "$f" ] || continue; ext="${f##*.}"; case "$f" in *.tar.gz) ext=tar.gz;; *.tar.gz.sig) ext=tar.gz.sig;; *.sig) ext="$(basename "$f" | sed 's/.*\.\([a-zA-Z]*\)\.sig$/\1.sig/')";; esac; cp "$f" "out/Smidge_${V}_${{ matrix.label }}.${ext}"; done; }
           case "${{ runner.os }}" in
             Windows) copy $B/release/bundle/nsis/*.exe $B/release/bundle/nsis/*.sig $B/release/bundle/msi/*.msi $B/release/bundle/msi/*.sig ;;
